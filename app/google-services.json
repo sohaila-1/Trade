@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "532737859252",
+    "project_id": "tradeconnect-69b77",
+    "storage_bucket": "tradeconnect-69b77.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:532737859252:android:bcc651e06fc937d1ed81e1",
+        "android_client_info": {
+          "package_name": "com.example.tradeconnect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrqBFx0_jRb9pQ4Ot2L8sRssECvGXwEw8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
