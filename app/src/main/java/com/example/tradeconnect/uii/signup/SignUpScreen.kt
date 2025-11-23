@@ -23,7 +23,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.tradeconnect.R
 import com.example.tradeconnect.data.datastore.FakeUserPreferences
 import com.example.tradeconnect.data.repository.FakeAuthRepository
-import com.example.tradeconnect.ui.theme.TwitterBlue
+import com.example.tradeconnect.ui.theme.TBlue
 import com.example.tradeconnect.viewmodel.AuthViewModel
 
 @Composable
@@ -40,8 +40,8 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
         verticalArrangement = Arrangement.Center
     ) {
         Image(
-            painter = painterResource(id = R.drawable.twitterlogo),
-            contentDescription = "Twitter Logo",
+            painter = painterResource(id = R.drawable.logo),
+            contentDescription = "Logo",
             modifier = Modifier
                 .size(90.dp)
                 .align(Alignment.CenterHorizontally)
@@ -49,7 +49,7 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text("Sign in to Twitter", style = MaterialTheme.typography.h5, modifier = Modifier.align(Alignment.CenterHorizontally))
+        Text("Sign in to App", style = MaterialTheme.typography.h5, modifier = Modifier.align(Alignment.CenterHorizontally))
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -128,7 +128,7 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
                 }
             },
             colors = ButtonDefaults.buttonColors(
-                backgroundColor = TwitterBlue,
+                backgroundColor = TBlue,
                 contentColor = Color.White
             ),
             modifier = Modifier
@@ -147,7 +147,7 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
         ) {
             Text("You have an account?")
             TextButton(onClick = { navController.navigate("login") }) {
-                Text("Sign In", color = TwitterBlue)
+                Text("Sign In", color = TBlue)
             }
         }
 

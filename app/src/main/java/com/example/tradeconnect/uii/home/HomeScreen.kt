@@ -9,7 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.tradeconnect.ui.theme.TwitterBlue
+import com.example.tradeconnect.ui.theme.TBlue
 import com.example.tradeconnect.viewmodel.AuthViewModel
 
 @Composable
@@ -21,7 +21,7 @@ fun HomeScreen(navController: NavController, viewModel: AuthViewModel) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Home Feed (Twitter Clone)")
+        Text("Home Feed")
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -30,7 +30,7 @@ fun HomeScreen(navController: NavController, viewModel: AuthViewModel) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(55.dp),
-            colors = ButtonDefaults.buttonColors(backgroundColor = TwitterBlue, contentColor = androidx.compose.ui.graphics.Color.White)
+            colors = ButtonDefaults.buttonColors(backgroundColor = TBlue, contentColor = androidx.compose.ui.graphics.Color.White)
         ) {
             Text("Chat")
         }

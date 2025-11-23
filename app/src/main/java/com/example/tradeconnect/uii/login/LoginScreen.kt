@@ -21,7 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.tradeconnect.R
 import com.example.tradeconnect.data.datastore.FakeUserPreferences
 import com.example.tradeconnect.data.repository.FakeAuthRepository
-import com.example.tradeconnect.ui.theme.TwitterBlue
+import com.example.tradeconnect.ui.theme.TBlue
 import com.example.tradeconnect.viewmodel.AuthViewModel
 
 @Composable
@@ -36,8 +36,8 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
         // Logo & title
         Image(
-            painter = painterResource(id = R.drawable.twitterlogo),
-            contentDescription = "Twitter Logo",
+            painter = painterResource(id = R.drawable.logo),
+            contentDescription = "Logo",
             modifier = Modifier
                 .size(90.dp)
                 .align(Alignment.CenterHorizontally)
@@ -45,7 +45,7 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text("Log in to Twitter", style = MaterialTheme.typography.h5, modifier = Modifier.align(Alignment.CenterHorizontally))
+        Text("Log in to App", style = MaterialTheme.typography.h5, modifier = Modifier.align(Alignment.CenterHorizontally))
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -85,7 +85,7 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
             }
 
             TextButton(onClick = { /* TODO: forgot password */ }) {
-                Text("Forgot password?", color = TwitterBlue)
+                Text("Forgot password?", color = TBlue)
             }
         }
 
@@ -101,7 +101,7 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
                 }
             },
             colors = ButtonDefaults.buttonColors(
-                backgroundColor = TwitterBlue,
+                backgroundColor = TBlue,
                 contentColor = Color.White
             ),
             modifier = Modifier
@@ -120,7 +120,7 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
         ) {
             Text("Don't have an account?")
             TextButton(onClick = { navController.navigate("signup") }) {
-                Text("Sign Up", color = TwitterBlue)
+                Text("Sign Up", color = TBlue)
             }
         }
 
