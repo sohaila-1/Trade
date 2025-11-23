@@ -12,10 +12,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.tradeconnect.ui.theme.TradeConnectTheme
+import com.google.firebase.FirebaseApp   // <-- IMPORTANT
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 🔥 Vérification Firebase
+        FirebaseApp.initializeApp(this)
+        println("🔥 Firebase is working !")  // Tu verras ça dans Logcat
+
         enableEdgeToEdge()
         setContent {
             TradeConnectTheme {
