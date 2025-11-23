@@ -3,51 +3,44 @@ package com.example.tradeconnect
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.compose.rememberNavController
+import com.example.tradeconnect.data.datastore.UserPreferences
+import com.example.tradeconnect.data.repository.AuthRepository
+import com.example.tradeconnect.nagivation.AppNavHost
 import com.example.tradeconnect.ui.theme.TradeConnectTheme
-import com.google.firebase.FirebaseApp   // <-- IMPORTANT
+import com.example.tradeconnect.uii.SplashScreen
+import com.example.tradeconnect.viewmodel.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 🔥 Vérification Firebase
-        FirebaseApp.initializeApp(this)
-        println("🔥 Firebase is working !")  // Tu verras ça dans Logcat
+        val preferences = UserPreferences(applicationContext)
+        val repo = AuthRepository(FirebaseAuth.getInstance())
+        val factory = AuthViewModel.Factory(repo, preferences)
 
-        enableEdgeToEdge()
         setContent {
             TradeConnectTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                Surface(color = MaterialTheme.colors.background) {
+                    val navController = rememberNavController()
+                    val authViewModel = ViewModelProvider(this, factory).get(AuthViewModel::class.java)
+
+                    val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+
+                    when (isLoggedIn) {
+                        null -> SplashScreen(navController) // show a loading screen while checking
+                        true -> AppNavHost(navController, authViewModel, startDestination = "home")
+                        false -> AppNavHost(navController, authViewModel, startDestination = "login")
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TradeConnectTheme {
-        Greeting("Android")
-    }
-}
