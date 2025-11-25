@@ -34,10 +34,11 @@ class MainActivity : ComponentActivity() {
                     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
 
                     when (isLoggedIn) {
-                        null -> SplashScreen(navController) // show a loading screen while checking
-                        true -> AppNavHost(navController, authViewModel, startDestination = "home")
+                        null -> SplashScreen(navController)
+                        true -> AppNavHost(navController, authViewModel, startDestination = "feed")
                         false -> AppNavHost(navController, authViewModel, startDestination = "login")
                     }
+
                 }
             }
         }

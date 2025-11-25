@@ -21,7 +21,6 @@ fun HomeScreen(navController: NavController, viewModel: AuthViewModel) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Home Feed")
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -33,6 +32,19 @@ fun HomeScreen(navController: NavController, viewModel: AuthViewModel) {
             colors = ButtonDefaults.buttonColors(backgroundColor = TBlue, contentColor = androidx.compose.ui.graphics.Color.White)
         ) {
             Text("Chat")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // ⭐⭐ NOUVEAU BOUTON POUR ALLER AU FEED ⭐⭐
+        Button(
+            onClick = { navController.navigate("feed") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(55.dp),
+            colors = ButtonDefaults.buttonColors(backgroundColor = TBlue, contentColor = androidx.compose.ui.graphics.Color.White)
+        ) {
+            Text("Voir le Feed")
         }
 
         Spacer(modifier = Modifier.height(12.dp))
