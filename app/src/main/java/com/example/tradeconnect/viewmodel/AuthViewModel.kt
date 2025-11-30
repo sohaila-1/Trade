@@ -69,9 +69,33 @@ class AuthViewModel(
         }
     }
 
+//    fun signUp(onSuccess: () -> Unit) {
+//        isLoading = true
+//        repo.signUp(email, password) { success, error ->
+//            isLoading = false
+//            if (success) {
+//                viewModelScope.launch {
+//                    // default keep logged in after sign up
+//                    // if user didn't explicitly set rememberMe, keep it true by default
+//                    if (!rememberMe) {
+//                        rememberMe = true
+//                        prefs.setRememberMe(true)
+//                    } else {
+//                        prefs.setRememberMe(rememberMe)
+//                    }
+//                    _isLoggedIn.value = true
+//                    onSuccess()
+//                }
+//            } else {
+//                errorMessage = error
+//            }
+//        }
+//    }
+
     fun signUp(onSuccess: () -> Unit) {
         isLoading = true
-        repo.signUp(email, password) { success, error ->
+        // Pass all signup fields to repository
+        repo.signUp(email, password, firstName, lastName, phone) { success, error ->
             isLoading = false
             if (success) {
                 viewModelScope.launch {
