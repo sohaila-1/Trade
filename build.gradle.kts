@@ -15,5 +15,8 @@ buildscript {
         classpath("com.google.gms:google-services:4.4.4") // <-- Firebase plugin
         classpath("com.google.dagger:hilt-android-gradle-plugin:2.57.2") // Hilt plugin
         classpath(kotlin("gradle-plugin", version = "1.9.10"))
+
     }
+
 }
+

@@ -1,5 +1,6 @@
 package com.example.tradeconnect.uii.user
 
+import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -28,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -35,6 +37,8 @@ import com.example.tradeconnect.data.repository.FakeAuthRepository
 import com.example.tradeconnect.data.repository.FakeProfileRepository
 import com.example.tradeconnect.ui.theme.TBlue
 import com.example.tradeconnect.viewmodel.ProfileViewModel
+import com.yalantis.ucrop.UCrop
+import java.io.File
 
 @Composable
 fun UserProfileScreen(
@@ -42,12 +46,53 @@ fun UserProfileScreen(
     viewModel: ProfileViewModel
 ) {
     val context = LocalContext.current
+    val activity = context as? Activity
+
+    // Create a temporary file for cropped image
+    val tempCroppedFile = remember {
+        File(context.cacheDir, "cropped_profile_${System.currentTimeMillis()}.jpg")
+    }
+
+    // UCrop launcher
+    val uCropLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val resultUri = UCrop.getOutput(result.data!!)
+            resultUri?.let { uri ->
+                viewModel.uploadProfileImage(context, uri)
+            }
+        }
+    }
 
     // Image picker launcher
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { viewModel.uploadProfileImage(context, it) }
+        uri?.let { sourceUri ->
+            // Launch UCrop with 1:1 aspect ratio
+            val destinationUri = Uri.fromFile(tempCroppedFile)
+
+            val uCropIntent = UCrop.of(sourceUri, destinationUri)
+                .withAspectRatio(1f, 1f) // 1:1 square crop
+                .withMaxResultSize(800, 800) // Max size
+                .withOptions(UCrop.Options().apply {
+                    setCompressionQuality(80)
+                    setHideBottomControls(false)
+                    setFreeStyleCropEnabled(false) // Force 1:1 ratio
+                    setToolbarTitle("Crop Profile Picture")
+                    setToolbarColor(android.graphics.Color.parseColor("#1976D2"))
+                    setStatusBarColor(android.graphics.Color.parseColor("#1976D2"))
+                    setActiveControlsWidgetColor(android.graphics.Color.parseColor("#1976D2"))
+
+                    // Enable rotate and flip
+                    setShowCropGrid(true)
+                    setShowCropFrame(true)
+                })
+                .getIntent(context)
+
+            uCropLauncher.launch(uCropIntent)
+        }
     }
 
     // Decode base64 image outside composable
