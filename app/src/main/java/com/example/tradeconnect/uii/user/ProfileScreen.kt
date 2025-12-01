@@ -13,9 +13,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,7 +29,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -39,14 +38,16 @@ import com.example.tradeconnect.ui.theme.TBlue
 import com.example.tradeconnect.viewmodel.ProfileViewModel
 import com.yalantis.ucrop.UCrop
 import java.io.File
+import androidx.core.graphics.toColorInt
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserProfileScreen(
     navController: NavController,
     viewModel: ProfileViewModel
 ) {
     val context = LocalContext.current
-    val activity = context as? Activity
+    //val activity = context as? Activity
 
     // Create a temporary file for cropped image
     val tempCroppedFile = remember {
@@ -81,9 +82,9 @@ fun UserProfileScreen(
                     setHideBottomControls(false)
                     setFreeStyleCropEnabled(false) // Force 1:1 ratio
                     setToolbarTitle("Crop Profile Picture")
-                    setToolbarColor(android.graphics.Color.parseColor("#1976D2"))
-                    setStatusBarColor(android.graphics.Color.parseColor("#1976D2"))
-                    setActiveControlsWidgetColor(android.graphics.Color.parseColor("#1976D2"))
+                    setToolbarColor("#1976D2".toColorInt())
+                    setStatusBarColor("#1976D2".toColorInt())
+                    setActiveControlsWidgetColor("#1976D2".toColorInt())
 
                     // Enable rotate and flip
                     setShowCropGrid(true)
@@ -106,25 +107,48 @@ fun UserProfileScreen(
             .background(Color(0xFFF5F5F5))
     ) {
         // Top Bar
-        TopAppBar(
-            backgroundColor = Color.White,
-            elevation = 0.dp
-        ) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.Black
-                )
-            }
-            Text(
-                text = "User Profile",
-                style = MaterialTheme.typography.h6,
-                modifier = Modifier.weight(1f),
-                fontWeight = FontWeight.Medium
-            )
-        }
+//        TopAppBar(
+//            backgroundColor = Color.White,
+//            elevation = 0.dp
+//        ) {
+//            IconButton(onClick = { navController.popBackStack() }) {
+//                Icon(
+//                    imageVector = Icons.Default.ArrowBack,
+//                    contentDescription = "Back",
+//                    tint = Color.Black
+//                )
+//            }
+//            Text(
+//                text = "User Profile",
+//                style = MaterialTheme.typography.headlineSmall,
+//                modifier = Modifier.weight(1f),
+//                fontWeight = FontWeight.Medium
+//            )
+//        }
 
+        CenterAlignedTopAppBar(
+            title = {
+                Text(
+                    text = "User Profile",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Medium
+                )
+            },
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.Black
+                    )
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color.White,
+                navigationIconContentColor = Color.Black,
+                titleContentColor = Color.Black
+            )
+        )
         // Content
         Column(
             modifier = Modifier
@@ -207,10 +231,13 @@ fun UserProfileScreen(
                     onValueChange = { viewModel.firstName = it },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(50.dp),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        backgroundColor = Color.White,
-                        focusedBorderColor = TBlue,
-                        unfocusedBorderColor = Color(0xFFE0E0E0)
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedIndicatorColor = TBlue,
+                        unfocusedIndicatorColor = Color(0xFFE0E0E0),
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
                     ),
                     enabled = !viewModel.isLoading
                 )
@@ -231,10 +258,13 @@ fun UserProfileScreen(
                     onValueChange = { viewModel.lastName = it },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(50.dp),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        backgroundColor = Color.White,
-                        focusedBorderColor = TBlue,
-                        unfocusedBorderColor = Color(0xFFE0E0E0)
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedIndicatorColor = TBlue,
+                        unfocusedIndicatorColor = Color(0xFFE0E0E0),
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
                     ),
                     enabled = !viewModel.isLoading
                 )
@@ -255,10 +285,13 @@ fun UserProfileScreen(
                     onValueChange = { viewModel.email = it },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(50.dp),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        backgroundColor = Color.White,
-                        focusedBorderColor = TBlue,
-                        unfocusedBorderColor = Color(0xFFE0E0E0)
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedIndicatorColor = TBlue,
+                        unfocusedIndicatorColor = Color(0xFFE0E0E0),
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
                     ),
                     enabled = !viewModel.isLoading
                 )
@@ -279,10 +312,13 @@ fun UserProfileScreen(
                     onValueChange = { viewModel.mobile = it },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(50.dp),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        backgroundColor = Color.White,
-                        focusedBorderColor = TBlue,
-                        unfocusedBorderColor = Color(0xFFE0E0E0)
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedIndicatorColor = TBlue,
+                        unfocusedIndicatorColor = Color(0xFFE0E0E0),
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
                     ),
                     enabled = !viewModel.isLoading
                 )
@@ -294,7 +330,7 @@ fun UserProfileScreen(
             viewModel.errorMessage?.let { error ->
                 Text(
                     text = error,
-                    color = MaterialTheme.colors.error,
+                    color = MaterialTheme.colorScheme.error,
                     fontSize = 14.sp,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -319,7 +355,7 @@ fun UserProfileScreen(
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = TBlue,
+                    containerColor = TBlue,
                     contentColor = Color.White
                 ),
                 modifier = Modifier
@@ -356,7 +392,7 @@ private fun decodeBase64ToBitmap(base64String: String): Bitmap? {
         val imageBytes = Base64.decode(base64Data, Base64.DEFAULT)
         BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
     } catch (e: Exception) {
-        null
+        throw e
     }
 }
 

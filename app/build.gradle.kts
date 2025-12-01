@@ -2,10 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
 
-    kotlin("kapt")
-    id("com.google.dagger.hilt.android")
-    id("com.google.gms.google-services") // <-- keep it last
 }
 
 android {
@@ -63,31 +61,43 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    implementation("androidx.compose.ui:ui:1.9.4")
-    implementation("androidx.compose.material:material:1.9.4")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.9.4")
-    implementation("androidx.navigation:navigation-compose:2.9.6")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
+    implementation(libs.compose.ui)
+    implementation(libs.compose.material)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.navigation.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
 
-    // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
-    implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx")
-    implementation("com.google.firebase:firebase-storage-ktx")
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
 
-    // Optional: Hilt
-    implementation("com.google.dagger:hilt-android:2.57.2")
-    kapt("com.google.dagger:hilt-compiler:2.57.2")
+    implementation(libs.coroutines.android)
 
-    // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation(libs.datastore.preferences)
+    implementation(libs.compose.material.icons)
 
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
-    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    implementation(libs.ucrop)
 
-    implementation("com.github.yalantis:ucrop:2.2.8")
+
+//    implementation("androidx.compose.ui:ui:1.9.5")
+//    implementation("androidx.compose.material:material:1.9.5")
+//    implementation("androidx.compose.ui:ui-tooling-preview:1.9.5")
+//    implementation("androidx.navigation:navigation-compose:2.9.6")
+//    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+//
+//    // Firebase
+//    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+//    implementation("com.google.firebase:firebase-auth-ktx")
+//    implementation("com.google.firebase:firebase-firestore-ktx")
+//    implementation("com.google.firebase:firebase-storage-ktx")
+//
+//    // Coroutines
+//    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+//
+//    implementation("androidx.datastore:datastore-preferences:1.2.0")
+//    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+//
+//    implementation("com.github.yalantis:ucrop:2.2.8")
 }
 
-kapt {
-    correctErrorTypes = true
-}

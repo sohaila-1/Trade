@@ -3,7 +3,7 @@ package com.example.tradeconnect.uii.signup
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -49,7 +49,7 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text("Sign in to App", style = MaterialTheme.typography.h5, modifier = Modifier.align(Alignment.CenterHorizontally))
+        Text("Sign in to App", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.align(Alignment.CenterHorizontally))
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -128,7 +128,7 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
                 }
             },
             colors = ButtonDefaults.buttonColors(
-                backgroundColor = TBlue,
+                containerColor = TBlue,
                 contentColor = Color.White
             ),
             modifier = Modifier
@@ -152,7 +152,7 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
         }
 
         viewModel.errorMessage?.let {
-            Text(it, color = MaterialTheme.colors.error)
+            Text(it, color = MaterialTheme.colorScheme.error)
         }
     }
 }

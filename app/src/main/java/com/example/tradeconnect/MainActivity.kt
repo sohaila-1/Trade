@@ -3,8 +3,8 @@ package com.example.tradeconnect
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModelProvider
@@ -38,9 +38,11 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TradeConnectTheme {
-                Surface(color = MaterialTheme.colors.background) {
+                Surface(color = MaterialTheme.colorScheme.background) {
                     val navController = rememberNavController()
-                    val authViewModel = ViewModelProvider(this, authFactory).get(AuthViewModel::class.java)
+                    //val authViewModel = ViewModelProvider(this, authFactory).get(AuthViewModel::class.java)
+                    val authViewModel = ViewModelProvider(this, authFactory)[AuthViewModel::class.java]
+
 
                     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
 
