@@ -20,7 +20,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.tradeconnect.R
 import com.example.tradeconnect.data.datastore.FakeUserPreferences
-import com.example.tradeconnect.data.repository.FakeAuthRepository
+import com.example.tradeconnect.repository.FakeAuthRepository
 import com.example.tradeconnect.ui.theme.TBlue
 import com.example.tradeconnect.viewmodel.AuthViewModel
 

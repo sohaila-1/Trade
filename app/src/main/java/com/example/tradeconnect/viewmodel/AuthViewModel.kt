@@ -3,14 +3,12 @@ package com.example.tradeconnect.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.tradeconnect.data.datastore.UserPreferences
-import com.example.tradeconnect.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.*
 import com.example.tradeconnect.data.datastore.IUserPreferences
-import com.example.tradeconnect.data.repository.IAuthRepository
+import com.example.tradeconnect.repository.IAuthRepository
 
 class AuthViewModel(
     private val repo: IAuthRepository,

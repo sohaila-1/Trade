@@ -1,4 +1,4 @@
-package com.example.tradeconnect.data.repository
+package com.example.tradeconnect.repository
 
 import com.google.firebase.auth.FirebaseUser
 

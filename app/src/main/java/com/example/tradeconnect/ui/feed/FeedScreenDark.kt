@@ -1,5 +1,6 @@
 package com.example.tradeconnect.ui.feed
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,54 +15,50 @@ import androidx.navigation.NavController
 import com.example.tradeconnect.viewmodel.TweetViewModel
 
 @Composable
-fun FeedScreen(
+fun FeedScreenDark(
     navController: NavController,
     viewModel: TweetViewModel,
     isDarkMode: Boolean,
     onToggleTheme: () -> Unit
-) {
+){
     val tweets = viewModel.tweets.value
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Home") },
-                backgroundColor = Color.White,
+                title = { Text("Home", color = Color.White) },
+                backgroundColor = Color.Black,
                 elevation = 0.dp,
                 actions = {
                     TextButton(onClick = { onToggleTheme() }) {
                         Text(
-                            if (isDarkMode) "Light" else "Dark",
-                            color = Color(0xFF1DA1F2)
+                            text = if (isDarkMode) "Light" else "Dark",
+                            color = Color.White
                         )
                     }
                 }
             )
         },
+        backgroundColor = Color.Black,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { navController.navigate("newTweet") },
-                backgroundColor = Color(0xFF1DA1F2)
+                backgroundColor = Color.White
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "New Tweet",
-                    tint = Color.White
-                )
+                Icon(Icons.Default.Add, contentDescription = "New Tweet", tint = Color.Black)
             }
         }
     ) {
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Color.Black)
                 .padding(horizontal = 12.dp)
         ) {
             items(tweets) { tweet ->
-                TweetItem(tweet)
-                Divider(
-                    color = Color.LightGray.copy(alpha = 0.3f),
-                    thickness = 1.dp
-                )
+                TweetItemDark(tweet)
+                Divider(color = Color.White.copy(alpha = 0.1f), thickness = 1.dp)
             }
         }
     }
