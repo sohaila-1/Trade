@@ -11,7 +11,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.rememberNavController
 import com.example.tradeconnect.data.datastore.UserPreferences
 import com.example.tradeconnect.repository.AuthRepository
-import com.example.tradeconnect.nagivation.AppNavHost
+import com.example.tradeconnect.navigation.AppNavHost
 import com.example.tradeconnect.ui.theme.TradeConnectTheme
 import com.example.tradeconnect.uii.SplashScreen
 import com.example.tradeconnect.viewmodel.AuthViewModel

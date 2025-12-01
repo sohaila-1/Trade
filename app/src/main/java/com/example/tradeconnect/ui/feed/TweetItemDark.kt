@@ -3,8 +3,12 @@ package com.example.tradeconnect.ui.feed
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChatBubbleOutline
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,42 +20,74 @@ import com.example.tradeconnect.model.Tweet
 @Composable
 fun TweetItemDark(tweet: Tweet) {
 
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 14.dp)
+            .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
-        // Avatar dark mode
-        Box(
+
+        Row {
+            // Avatar
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = tweet.username.first().uppercase(),
+                    color = Color.White,
+                    style = MaterialTheme.typography.subtitle1
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column {
+                Text(
+                    text = tweet.username,
+                    style = MaterialTheme.typography.subtitle1,
+                    color = Color.White
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = tweet.content,
+                    style = MaterialTheme.typography.body2,
+                    color = Color.LightGray
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // ACTION BAR
+        Row(
             modifier = Modifier
-                .size(46.dp)
-                .clip(CircleShape)
-                .background(Color.DarkGray),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .padding(start = 58.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = tweet.username.first().uppercase(),
-                color = Color.White,
-                style = MaterialTheme.typography.subtitle1
-            )
+            IconButton(onClick = {}) {
+                Icon(Icons.Default.ChatBubbleOutline, null, tint = Color.LightGray)
+            }
+            IconButton(onClick = {}) {
+                Icon(Icons.Default.Repeat, null, tint = Color.LightGray)
+            }
+            IconButton(onClick = {}) {
+                Icon(Icons.Default.FavoriteBorder, null, tint = Color.LightGray)
+            }
+            IconButton(onClick = {}) {
+                Icon(Icons.Default.Share, null, tint = Color.LightGray)
+            }
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column {
-            Text(
-                text = tweet.username,
-                color = Color.White,
-                style = MaterialTheme.typography.subtitle1
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = tweet.content,
-                color = Color(0xFFCCCCCC),
-                style = MaterialTheme.typography.body2
-            )
-        }
+        Divider(
+            color = Color.White.copy(alpha = 0.1f),
+            thickness = 1.dp,
+            modifier = Modifier.padding(top = 8.dp)
+        )
     }
 }
