@@ -33,14 +33,16 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
     buildFeatures {
         compose = true
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    }
+}
 dependencies {
 
     implementation(libs.androidx.core.ktx)
@@ -79,7 +81,7 @@ dependencies {
 
     implementation(libs.ucrop)
 
-
+    //implementation("com.vanniktech:android-image-cropper:4.5.0")
 //    implementation("androidx.compose.ui:ui:1.9.5")
 //    implementation("androidx.compose.material:material:1.9.5")
 //    implementation("androidx.compose.ui:ui-tooling-preview:1.9.5")

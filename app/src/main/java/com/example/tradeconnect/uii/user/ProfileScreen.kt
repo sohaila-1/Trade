@@ -47,7 +47,6 @@ fun UserProfileScreen(
     viewModel: ProfileViewModel
 ) {
     val context = LocalContext.current
-    //val activity = context as? Activity
 
     // Create a temporary file for cropped image
     val tempCroppedFile = remember {
@@ -74,22 +73,31 @@ fun UserProfileScreen(
             // Launch UCrop with 1:1 aspect ratio
             val destinationUri = Uri.fromFile(tempCroppedFile)
 
-            val uCropIntent = UCrop.of(sourceUri, destinationUri)
-                .withAspectRatio(1f, 1f) // 1:1 square crop
-                .withMaxResultSize(800, 800) // Max size
-                .withOptions(UCrop.Options().apply {
-                    setCompressionQuality(80)
-                    setHideBottomControls(false)
-                    setFreeStyleCropEnabled(false) // Force 1:1 ratio
-                    setToolbarTitle("Crop Profile Picture")
-                    setToolbarColor("#1976D2".toColorInt())
-                    setStatusBarColor("#1976D2".toColorInt())
-                    setActiveControlsWidgetColor("#1976D2".toColorInt())
+            val options = UCrop.Options().apply {
+                setCompressionQuality(80)
+                setHideBottomControls(false)
+                setFreeStyleCropEnabled(false)
+                setToolbarTitle("Crop Profile Picture")
+                setShowCropGrid(true)
+                setShowCropFrame(true)
 
-                    // Enable rotate and flip
-                    setShowCropGrid(true)
-                    setShowCropFrame(true)
-                })
+                // Color settings
+                setToolbarColor("#1976D2".toColorInt())
+                setStatusBarColor("#1976D2".toColorInt())
+                setActiveControlsWidgetColor("#1976D2".toColorInt())
+                setToolbarWidgetColor("#FFFFFF".toColorInt())
+
+                // IMPORTANT: Set root view background to avoid transparent areas
+                setRootViewBackgroundColor("#000000".toColorInt())
+
+                // Circle crop for profile picture
+                setCircleDimmedLayer(true)
+            }
+
+            val uCropIntent = UCrop.of(sourceUri, destinationUri)
+                .withAspectRatio(1f, 1f)
+                .withMaxResultSize(800, 800)
+                .withOptions(options)
                 .getIntent(context)
 
             uCropLauncher.launch(uCropIntent)
@@ -107,25 +115,6 @@ fun UserProfileScreen(
             .background(Color(0xFFF5F5F5))
     ) {
         // Top Bar
-//        TopAppBar(
-//            backgroundColor = Color.White,
-//            elevation = 0.dp
-//        ) {
-//            IconButton(onClick = { navController.popBackStack() }) {
-//                Icon(
-//                    imageVector = Icons.Default.ArrowBack,
-//                    contentDescription = "Back",
-//                    tint = Color.Black
-//                )
-//            }
-//            Text(
-//                text = "User Profile",
-//                style = MaterialTheme.typography.headlineSmall,
-//                modifier = Modifier.weight(1f),
-//                fontWeight = FontWeight.Medium
-//            )
-//        }
-
         CenterAlignedTopAppBar(
             title = {
                 Text(

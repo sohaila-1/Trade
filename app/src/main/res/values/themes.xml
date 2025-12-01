@@ -2,4 +2,11 @@
 <resources>
 
     <style name="Theme.TradeConnect" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- UCrop theme -->
+    <style name="UCropTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:statusBarColor">#1976D2</item>
+        <item name="android:navigationBarColor">#000000</item>
+        <item name="android:fitsSystemWindows">true</item>
+    </style>
 </resources>
