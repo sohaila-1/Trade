@@ -7,9 +7,10 @@ import com.google.firebase.firestore.Query
 class TweetRepository {
 
     private val db = FirebaseFirestore.getInstance()
+    private val tweetsRef = db.collection("tweets")
 
     fun getTweets(onResult: (List<Tweet>) -> Unit) {
-        db.collection("tweets")
+        tweetsRef
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) return@addSnapshotListener
@@ -21,8 +22,23 @@ class TweetRepository {
     }
 
     fun postTweet(tweet: Tweet, onComplete: () -> Unit) {
-        db.collection("tweets")
+        tweetsRef
             .add(tweet)
             .addOnSuccessListener { onComplete() }
     }
+
+    fun updateTweet(tweet: Tweet, onComplete: () -> Unit) {
+        tweetsRef
+            .document(tweet.id)
+            .set(tweet)
+            .addOnSuccessListener { onComplete() }
+    }
+
+    fun deleteTweet(tweetId: String, onSuccess: () -> Unit) {
+        tweetsRef
+            .document(tweetId)
+            .delete()
+            .addOnSuccessListener { onSuccess() }
+    }
 }
+

@@ -5,20 +5,28 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.tradeconnect.model.Tweet
+import com.example.tradeconnect.viewmodel.TweetViewModel
 
 @Composable
-fun TweetItem(tweet: Tweet) {
+fun TweetItem(
+    tweet: Tweet,
+    viewModel: TweetViewModel
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -26,7 +34,12 @@ fun TweetItem(tweet: Tweet) {
             .padding(vertical = 14.dp)
     ) {
 
-        Row {
+        // ---- TOP ROW : AVATAR + USERNAME + MENU ----
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+
             // Avatar
             Box(
                 modifier = Modifier
@@ -44,7 +57,10 @@ fun TweetItem(tweet: Tweet) {
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            Column {
+            // Username + content
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
                     text = tweet.username,
                     style = MaterialTheme.typography.subtitle1,
@@ -59,13 +75,40 @@ fun TweetItem(tweet: Tweet) {
                     color = Color.DarkGray
                 )
             }
+
+            // ---- 3 DOTS MENU ----
+            IconButton(onClick = { menuExpanded = true }) {
+                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+            }
+
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false }
+            ) {
+
+                DropdownMenuItem(onClick = {
+                    menuExpanded = false
+                    showEditDialog = true
+                }) {
+                    Text("Modifier")
+                }
+
+                DropdownMenuItem(onClick = {
+                    menuExpanded = false
+                    showDeleteDialog = true
+                }) {
+                    Text("Supprimer")
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ACTION BAR
+        // ---- ACTION BAR ----
         Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 58.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 58.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(onClick = {}) {
@@ -86,6 +129,29 @@ fun TweetItem(tweet: Tweet) {
             color = Color.LightGray.copy(alpha = 0.2f),
             thickness = 1.dp,
             modifier = Modifier.padding(top = 8.dp)
+        )
+    }
+
+    // ---- EDIT DIALOG ----
+    if (showEditDialog) {
+        EditTweetDialog(
+            oldContent = tweet.content,
+            onDismiss = { showEditDialog = false },
+            onSave = { newText ->
+                viewModel.editTweet(tweet.id, newText)
+                showEditDialog = false
+            }
+        )
+    }
+
+    // ---- DELETE DIALOG ----
+    if (showDeleteDialog) {
+        DeleteTweetDialog(
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
+                viewModel.deleteTweet(tweet.id)
+                showDeleteDialog = false
+            }
         )
     }
 }

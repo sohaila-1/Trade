@@ -36,4 +36,22 @@ class TweetViewModel : ViewModel() {
             loadTweets()
         }
     }
+
+    fun editTweet(tweetId: String, newContent: String) {   // ✔️ NON NULL
+        val original = tweets.value.firstOrNull { it.id == tweetId } ?: return
+
+        val updatedTweet = original.copy(content = newContent)
+
+        repository.updateTweet(updatedTweet) {
+            loadTweets()
+        }
+    }
+
+    fun deleteTweet(tweetId: String) {     // ✔️ NON NULL
+        repository.deleteTweet(tweetId) {
+            loadTweets()                   // recharge la liste après suppression
+        }
+    }
+
+
 }

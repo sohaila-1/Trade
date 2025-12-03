@@ -24,7 +24,6 @@ fun FeedScreen(
     onToggleTheme: () -> Unit
 ) {
     val tweets = viewModel.tweets.value
-
     var selectedTab by remember { mutableStateOf(0) } // 0 = Pour vous, 1 = Abonnements
 
     Scaffold(
@@ -36,7 +35,10 @@ fun FeedScreen(
                     elevation = 0.dp,
                     actions = {
                         TextButton(onClick = onToggleTheme) {
-                            Text(if (isDarkMode) "Light" else "Dark", color = Color(0xFF1DA1F2))
+                            Text(
+                                if (isDarkMode) "Light" else "Dark",
+                                color = Color(0xFF1DA1F2)
+                            )
                         }
                     }
                 )
@@ -61,27 +63,37 @@ fun FeedScreen(
                 }
             }
         },
+
         floatingActionButton = {
-            FloatingActionButton(onClick = { navController.navigate("newTweet") }) {
+            FloatingActionButton(
+                onClick = { navController.navigate("newTweet") },
+                backgroundColor = Color(0xFF1DA1F2),
+                contentColor = Color.White
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Tweet")
             }
         }
-    ) {
+    ) { padding ->
+
         LazyColumn(
             modifier = Modifier
+                .padding(padding)
                 .fillMaxSize()
                 .padding(horizontal = 12.dp)
         ) {
+
             val filteredTweets = if (selectedTab == 0) {
                 tweets  // Pour vous : tous les tweets
             } else {
                 tweets.filter { it.username == "Sohaila" }
-                // Abonnements : simulateur (plus tard réel)
             }
 
             items(filteredTweets) { tweet ->
-                TweetItem(tweet)
-                Divider(color = Color.LightGray.copy(alpha = 0.3f), thickness = 1.dp)
+                TweetItem(tweet = tweet, viewModel = viewModel) // <--- CORRECT
+                Divider(
+                    color = Color.LightGray.copy(alpha = 0.3f),
+                    thickness = 1.dp
+                )
             }
         }
     }
