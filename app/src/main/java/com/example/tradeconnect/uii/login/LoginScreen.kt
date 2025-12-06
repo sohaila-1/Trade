@@ -95,7 +95,7 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
             onClick = {
                 viewModel.login {
                     // navigate to home, clear backstack of login/signup
-                    navController.navigate("home") {
+                    navController.navigate("feed") {
                         popUpTo("login") { inclusive = true }
                     }
                 }

@@ -10,26 +10,26 @@ class TweetViewModel : ViewModel() {
 
     private val repository = TweetRepository()
 
-    var tweets = mutableStateOf(listOf<Tweet>())
-        private set
+    val tweets = mutableStateOf<List<Tweet>>(emptyList())
+    val currentUserId = mutableStateOf("")
+    val currentUsername = mutableStateOf("")
 
     init {
         loadTweets()
     }
 
     fun loadTweets() {
-        repository.getTweets { list ->
-            tweets.value = list
+        repository.getTweets {
+            tweets.value = it
         }
     }
 
-    fun createTweet(content: String, username: String, userId: String) {
+    fun createTweet(content: String) {
         val tweet = Tweet(
             id = UUID.randomUUID().toString(),
-            userId = userId,
-            username = username,
-            content = content,
-            timestamp = System.currentTimeMillis()
+            userId = currentUserId.value,
+            username = currentUsername.value,
+            content = content
         )
 
         repository.postTweet(tweet) {
@@ -37,21 +37,25 @@ class TweetViewModel : ViewModel() {
         }
     }
 
-    fun editTweet(tweetId: String, newContent: String) {   // ✔️ NON NULL
-        val original = tweets.value.firstOrNull { it.id == tweetId } ?: return
-
-        val updatedTweet = original.copy(content = newContent)
-
-        repository.updateTweet(updatedTweet) {
+    // ---- OFFICIEL: ta fonction d'édition existante ----
+    fun editTweet(id: String, newContent: String) {
+        repository.updateTweet(id, newContent) {
             loadTweets()
         }
     }
 
-    fun deleteTweet(tweetId: String) {     // ✔️ NON NULL
-        repository.deleteTweet(tweetId) {
-            loadTweets()                   // recharge la liste après suppression
+    // ---- AJOUT : alias pour éviter les crashs ----
+    fun updateTweet(id: String, newContent: String) {
+        editTweet(id, newContent)
+    }
+
+    fun deleteTweet(id: String) {
+        repository.deleteTweet(id) {
+            loadTweets()
         }
     }
 
-
+    fun getTweetById(id: String): Tweet? {
+        return tweets.value.firstOrNull { it.id == id }
+    }
 }

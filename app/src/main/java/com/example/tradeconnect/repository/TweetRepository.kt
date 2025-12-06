@@ -13,32 +13,43 @@ class TweetRepository {
         tweetsRef
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, e ->
-                if (e != null) return@addSnapshotListener
-                if (snapshot != null) {
-                    val tweets = snapshot.toObjects(Tweet::class.java)
-                    onResult(tweets)
+
+                if (e != null) {
+                    println("Firestore error : ${e.message}")
+                    onResult(emptyList())
+                    return@addSnapshotListener
                 }
+
+                val tweets = snapshot?.toObjects(Tweet::class.java) ?: emptyList()
+                onResult(tweets)
             }
     }
 
-    fun postTweet(tweet: Tweet, onComplete: () -> Unit) {
-        tweetsRef
-            .add(tweet)
-            .addOnSuccessListener { onComplete() }
-    }
-
-    fun updateTweet(tweet: Tweet, onComplete: () -> Unit) {
+    fun postTweet(tweet: Tweet, onComplete: () -> Unit = {}) {
         tweetsRef
             .document(tweet.id)
             .set(tweet)
             .addOnSuccessListener { onComplete() }
     }
 
-    fun deleteTweet(tweetId: String, onSuccess: () -> Unit) {
-        tweetsRef
-            .document(tweetId)
+
+    fun updateTweet(tweetId: String, newContent: String, onComplete: () -> Unit) {
+        if (tweetId.isBlank()) {
+            println("❌ updateTweet ERROR: tweetId is empty")
+            return
+        }
+
+        tweetsRef.document(tweetId)
+            .update("content", newContent)
+            .addOnSuccessListener { onComplete() }
+            .addOnFailureListener { e ->
+                println("❌ FIRESTORE UPDATE ERROR: ${e.message}")
+            }
+    }
+
+    fun deleteTweet(tweetId: String, onSuccess: () -> Unit = {}) {
+        tweetsRef.document(tweetId)
             .delete()
             .addOnSuccessListener { onSuccess() }
     }
 }
-

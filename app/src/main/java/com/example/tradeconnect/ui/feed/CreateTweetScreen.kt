@@ -5,21 +5,29 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Gif
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.tradeconnect.R
+import com.example.tradeconnect.ui.feed.components.BottomNavBar
 import com.example.tradeconnect.viewmodel.TweetViewModel
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateTweetScreen(
     navController: NavController,
@@ -27,170 +35,84 @@ fun CreateTweetScreen(
 ) {
     var content by remember { mutableStateOf("") }
 
-    // État du menu de visibilité
-    var visibilityExpanded by remember { mutableStateOf(false) }
-    var selectedVisibility by remember { mutableStateOf("Tout le monde") }
-
-    val visibilityOptions = listOf("Tout le monde", "Amis", "Privé")
-
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {},
-                backgroundColor = Color.White,
-                elevation = 0.dp,
-                navigationIcon = {
-                    Text(
-                        "Annuler",
-                        modifier = Modifier
-                            .padding(start = 16.dp)
-                            .clickable { navController.popBackStack() },
-                        color = Color(0xFF1DA1F2),
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                actions = {
-                    Button(
-                        onClick = {
-                            viewModel.createTweet(
-                                content = content,
-                                username = "Sohaila",
-                                userId = "12345"
-                            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // ANNULER
+                Text(
+                    text = "Annuler",
+                    color = Color(0xFF1DA1F2),
+                    modifier = Modifier.clickable { navController.popBackStack() }
+                )
+
+                // POSTER
+                Text(
+                    text = "Poster",
+                    color = Color.White,
+                    modifier = Modifier
+                        .background(Color(0xFF1DA1F2), shape = MaterialTheme.shapes.small)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clickable {
+                            viewModel.createTweet(content)
                             navController.popBackStack()
-                        },
-                        enabled = content.isNotBlank(),
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = if (content.isNotBlank()) Color(0xFF1DA1F2) else Color(
-                                0xFFB3DFFC
-                            ),
-                            contentColor = Color.White
-                        ),
-                        modifier = Modifier.padding(end = 16.dp)
-                    ) {
-                        Text("Poster")
-                    }
-                }
+                        }
+                )
+            }
+        },
+
+        // ⭐ FOOTER AVEC FIX isDarkMode ⭐
+        bottomBar = {
+            BottomNavBar(
+                navController = navController,
+                isDarkMode = false   // <<< FIX IMPORTANT
             )
         }
-    ) {
+    ) { paddingValues ->
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 16.dp, start = 16.dp, end = 16.dp)
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
         ) {
 
-            // 🔵 Avatar + Visibilité
-            Row(verticalAlignment = Alignment.Top) {
+            Spacer(modifier = Modifier.height(8.dp))
 
-                Box(
-                    modifier = Modifier
-                        .size(46.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF1DA1F2).copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "S",
-                        color = Color(0xFF1DA1F2),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column {
-
-                    // Menu déroulant VISIBILITÉ
-                    Box {
-                        Row(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(Color(0xFF1DA1F2).copy(alpha = 0.15f))
-                                .clickable { visibilityExpanded = true }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                selectedVisibility,
-                                color = Color(0xFF1DA1F2),
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Icon(
-                                Icons.Default.ArrowDropDown,
-                                contentDescription = "",
-                                tint = Color(0xFF1DA1F2)
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = visibilityExpanded,
-                            onDismissRequest = { visibilityExpanded = false }
-                        ) {
-                            visibilityOptions.forEach { option ->
-                                DropdownMenuItem(onClick = {
-                                    selectedVisibility = option
-                                    visibilityExpanded = false
-                                }) {
-                                    Text(option)
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Champ texte
-                    OutlinedTextField(
-                        value = content,
-                        onValueChange = { content = it },
-                        placeholder = { Text("Quoi de neuf ?") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 120.dp),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                            focusedBorderColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent
-                        )
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 🌍 Qui peut répondre
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 4.dp)
-            ) {
-                Icon(Icons.Default.Public, contentDescription = "", tint = Color(0xFF1DA1F2))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    "Tout le monde peut répondre",
-                    color = Color(0xFF1DA1F2),
-                    fontWeight = FontWeight.SemiBold
+            // CHAMP DE SAISIE DU TWEET
+            TextField(
+                value = content,
+                onValueChange = { content = it },
+                placeholder = { Text("Quoi de neuf ?") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 150.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
                 )
-            }
+            )
 
-            Divider(modifier = Modifier.padding(vertical = 16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // 🔵 Barre d’actions
+            // ICÔNES TWITTER-LIKE
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 4.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Image, null, tint = Color(0xFF1DA1F2), modifier = Modifier.size(28.dp))
-                Spacer(Modifier.width(14.dp))
-                Icon(Icons.Default.CameraAlt, null, tint = Color(0xFF1DA1F2), modifier = Modifier.size(28.dp))
-                Spacer(Modifier.width(14.dp))
-                Icon(Icons.Default.Gif, null, tint = Color(0xFF1DA1F2), modifier = Modifier.size(28.dp))
-                Spacer(Modifier.width(14.dp))
-                Icon(Icons.Default.Poll, null, tint = Color(0xFF1DA1F2), modifier = Modifier.size(28.dp))
-                Spacer(Modifier.width(14.dp))
-                Icon(Icons.Default.EmojiEmotions, null, tint = Color(0xFF1DA1F2), modifier = Modifier.size(28.dp))
-                Spacer(Modifier.width(14.dp))
-                Icon(Icons.Default.LocationOn, null, tint = Color(0xFF1DA1F2), modifier = Modifier.size(28.dp))
+                Icon(Icons.Default.Image, contentDescription = null, tint = Color(0xFF1DA1F2))
+                Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color(0xFF1DA1F2))
+                Icon(Icons.Default.Tag, contentDescription = null, tint = Color(0xFF1DA1F2))
+                Icon(Icons.Default.Face, contentDescription = null, tint = Color(0xFF1DA1F2))
             }
         }
     }

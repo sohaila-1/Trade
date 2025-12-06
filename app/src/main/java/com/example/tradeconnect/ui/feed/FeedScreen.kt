@@ -5,17 +5,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.Divider
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.tradeconnect.ui.feed.components.BottomNavBar
 import com.example.tradeconnect.viewmodel.TweetViewModel
+import com.example.tradeconnect.ui.feed.components.SidebarMenu
+import com.example.tradeconnect.ui.feed.components.TabsHeader
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     navController: NavController,
@@ -24,104 +26,134 @@ fun FeedScreen(
     onToggleTheme: () -> Unit
 ) {
     val tweets = viewModel.tweets.value
-    var selectedTab by remember { mutableStateOf(0) } // 0 = Pour vous, 1 = Abonnements
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
 
-    Scaffold(
-        topBar = {
-            Column {
-                TopAppBar(
-                    title = { Text("Home") },
-                    backgroundColor = Color.White,
-                    elevation = 0.dp,
-                    actions = {
-                        TextButton(onClick = onToggleTheme) {
-                            Text(
-                                if (isDarkMode) "Light" else "Dark",
-                                color = Color(0xFF1DA1F2)
-                            )
-                        }
+    var showMoreDialog by remember { mutableStateOf(false) }
+    var selectedTweetId by remember { mutableStateOf<String?>(null) }
+
+    val bgColor = if (isDarkMode) Color.Black else Color.White
+    val textColor = if (isDarkMode) Color.White else Color.Black
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            SidebarMenu(
+                isDarkMode = isDarkMode,
+                onToggleTheme = onToggleTheme,
+                onLogoutClick = {
+                    navController.navigate("login") {
+                        popUpTo("feed") { inclusive = true }
                     }
-                )
-
-                // ---- TABS ----
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    TabItem(
-                        title = "Pour vous",
-                        selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 }
-                    )
-                    TabItem(
-                        title = "Abonnements",
-                        selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 }
-                    )
                 }
-            }
-        },
-
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate("newTweet") },
-                backgroundColor = Color(0xFF1DA1F2),
-                contentColor = Color.White
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Tweet")
-            }
+            )
         }
-    ) { padding ->
+    ) {
 
-        LazyColumn(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .padding(horizontal = 12.dp)
-        ) {
-
-            val filteredTweets = if (selectedTab == 0) {
-                tweets  // Pour vous : tous les tweets
-            } else {
-                tweets.filter { it.username == "Sohaila" }
-            }
-
-            items(filteredTweets) { tweet ->
-                TweetItem(tweet = tweet, viewModel = viewModel) // <--- CORRECT
-                Divider(
-                    color = Color.LightGray.copy(alpha = 0.3f),
-                    thickness = 1.dp
+        Scaffold(
+            containerColor = bgColor,
+            floatingActionButton = {
+                FloatingCreateTweetButton {
+                    navController.navigate("createTweet")
+                }
+            },
+            bottomBar = {
+                BottomNavBar(
+                    navController = navController,
+                    isDarkMode = isDarkMode
                 )
+            }
+        ) { paddingValues ->
+
+            Column(
+                modifier = Modifier
+                    .background(bgColor)
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 12.dp)
+            ) {
+
+                TabsHeader(
+                    isDarkMode = isDarkMode,
+                    textColor = textColor,
+                    drawerState = drawerState,
+                    scope = scope
+                )
+
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                LazyColumn {
+                    items(tweets) { tweet ->
+                        TweetItem(
+                            tweet = tweet,
+                            isDarkMode = isDarkMode,
+                            onMoreClick = {
+                                selectedTweetId = tweet.id
+                                showMoreDialog = true
+                            }
+                        )
+
+                        Divider(
+                            color = if (isDarkMode)
+                                Color.LightGray.copy(alpha = 0.1f)
+                            else
+                                Color.Gray.copy(alpha = 0.2f),
+                            thickness = 1.dp
+                        )
+                    }
+                }
             }
         }
     }
-}
 
-@Composable
-fun TabItem(title: String, selected: Boolean, onClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .clickable { onClick() }
-            .padding(vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = title,
-            color = if (selected) Color.Black else Color.Gray,
-            style = MaterialTheme.typography.subtitle1
-        )
+    // ---- BOTTOM SHEET ----
+    if (showMoreDialog && selectedTweetId != null) {
+        ModalBottomSheet(
+            onDismissRequest = { showMoreDialog = false },
+            containerColor = bgColor,
+            sheetState = sheetState
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(22.dp)) {
 
-        Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Modifier",
+                    color = textColor,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 10.dp)
+                        .clickable {
+                            showMoreDialog = false
+                            navController.navigate("editTweet/$selectedTweetId")
+                        }
+                )
 
-        if (selected) {
-            Box(
-                modifier = Modifier
-                    .height(3.dp)
-                    .width(40.dp)
-                    .background(Color.Black)
-            )
+                Text(
+                    text = "Supprimer",
+                    color = Color.Red,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 10.dp)
+                        .clickable {
+                            viewModel.deleteTweet(selectedTweetId!!)
+                            showMoreDialog = false
+                        }
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "Annuler",
+                    color = Color.Gray,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 10.dp)
+                        .clickable {
+                            showMoreDialog = false
+                        }
+                )
+            }
         }
     }
 }

@@ -1,157 +1,82 @@
 package com.example.tradeconnect.ui.feed
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.*
+import androidx.compose.material.Icon
+import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ModeComment
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.tradeconnect.model.Tweet
-import com.example.tradeconnect.viewmodel.TweetViewModel
 
 @Composable
 fun TweetItem(
     tweet: Tweet,
-    viewModel: TweetViewModel
+    isDarkMode: Boolean,
+    onMoreClick: () -> Unit
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
-    var showEditDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    val textColor = if (isDarkMode) Color.White else Color.Black
 
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 14.dp)
+            .padding(16.dp)
     ) {
 
-        // ---- TOP ROW : AVATAR + USERNAME + MENU ----
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-
-            // Avatar
-            Box(
-                modifier = Modifier
-                    .size(46.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF1DA1F2).copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = tweet.username.first().uppercase(),
-                    color = Color(0xFF1DA1F2),
-                    style = MaterialTheme.typography.subtitle1
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Username + content
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = tweet.username,
-                    style = MaterialTheme.typography.subtitle1,
-                    color = Color.Black
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = tweet.content,
-                    style = MaterialTheme.typography.body2,
-                    color = Color.DarkGray
-                )
-            }
-
-            // ---- 3 DOTS MENU ----
-            IconButton(onClick = { menuExpanded = true }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
-            }
-
-            DropdownMenu(
-                expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false }
-            ) {
-
-                DropdownMenuItem(onClick = {
-                    menuExpanded = false
-                    showEditDialog = true
-                }) {
-                    Text("Modifier")
-                }
-
-                DropdownMenuItem(onClick = {
-                    menuExpanded = false
-                    showDeleteDialog = true
-                }) {
-                    Text("Supprimer")
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // ---- ACTION BAR ----
-        Row(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 58.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+                .size(45.dp)
+                .clip(CircleShape)
+                .background(Color.DarkGray),
+            contentAlignment = Alignment.Center
         ) {
-            IconButton(onClick = {}) {
-                Icon(Icons.Default.ChatBubbleOutline, null, tint = Color.Gray)
+            Text(
+                text = tweet.username.firstOrNull()?.uppercase() ?: "?",
+                color = Color.White
+            )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(tweet.username, color = textColor)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(tweet.timestamp.toString(), color = Color.Gray)
             }
-            IconButton(onClick = {}) {
-                Icon(Icons.Default.Repeat, null, tint = Color.Gray)
-            }
-            IconButton(onClick = {}) {
-                Icon(Icons.Default.FavoriteBorder, null, tint = Color.Gray)
-            }
-            IconButton(onClick = {}) {
-                Icon(Icons.Default.Share, null, tint = Color.Gray)
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(tweet.content, color = textColor)
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row {
+                Icon(Icons.Default.FavoriteBorder, contentDescription = null, tint = textColor)
+                Spacer(modifier = Modifier.width(22.dp))
+                Icon(Icons.Default.ModeComment, contentDescription = null, tint = textColor)
+                Spacer(modifier = Modifier.width(22.dp))
+                Icon(Icons.Default.Send, contentDescription = null, tint = textColor)
             }
         }
 
-        Divider(
-            color = Color.LightGray.copy(alpha = 0.2f),
-            thickness = 1.dp,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-    }
-
-    // ---- EDIT DIALOG ----
-    if (showEditDialog) {
-        EditTweetDialog(
-            oldContent = tweet.content,
-            onDismiss = { showEditDialog = false },
-            onSave = { newText ->
-                viewModel.editTweet(tweet.id, newText)
-                showEditDialog = false
-            }
-        )
-    }
-
-    // ---- DELETE DIALOG ----
-    if (showDeleteDialog) {
-        DeleteTweetDialog(
-            onDismiss = { showDeleteDialog = false },
-            onConfirm = {
-                viewModel.deleteTweet(tweet.id)
-                showDeleteDialog = false
-            }
+        Icon(
+            imageVector = Icons.Default.MoreVert,
+            contentDescription = null,
+            tint = textColor,
+            modifier = Modifier
+                .padding(start = 12.dp)
+                .clickable { onMoreClick() }
         )
     }
 }
