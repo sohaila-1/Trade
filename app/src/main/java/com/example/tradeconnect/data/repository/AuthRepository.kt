@@ -14,14 +14,6 @@ open class AuthRepository(
         private const val USERS_COLLECTION = "users"
     }
 
-//    override fun signUp(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
-//        firebaseAuth.createUserWithEmailAndPassword(email, password)
-//            .addOnCompleteListener { task ->
-//                if (task.isSuccessful) onResult(true, null)
-//                else onResult(false, task.exception?.message)
-//            }
-//    }
-
     override fun signUp(
         email: String,
         password: String,

@@ -11,12 +11,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.io.ByteArrayOutputStream
 
-interface IProfileRepository {
-    suspend fun getUserProfile(uid: String): Result<User>
-    suspend fun updateUserProfile(user: User): Result<Unit>
-    suspend fun uploadProfileImage(context: Context, uid: String, imageUri: Uri): Result<String>
-}
-
 class ProfileRepository(
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth

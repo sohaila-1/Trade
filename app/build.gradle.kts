@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
 
+    id("com.google.devtools.ksp") version "2.2.21-2.0.4"
 }
 
 android {
@@ -81,25 +82,17 @@ dependencies {
 
     implementation(libs.ucrop)
 
-    //implementation("com.vanniktech:android-image-cropper:4.5.0")
-//    implementation("androidx.compose.ui:ui:1.9.5")
-//    implementation("androidx.compose.material:material:1.9.5")
-//    implementation("androidx.compose.ui:ui-tooling-preview:1.9.5")
-//    implementation("androidx.navigation:navigation-compose:2.9.6")
-//    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
-//
-//    // Firebase
-//    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
-//    implementation("com.google.firebase:firebase-auth-ktx")
-//    implementation("com.google.firebase:firebase-firestore-ktx")
-//    implementation("com.google.firebase:firebase-storage-ktx")
-//
-//    // Coroutines
-//    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-//
-//    implementation("androidx.datastore:datastore-preferences:1.2.0")
-//    implementation("androidx.compose.material:material-icons-extended:1.7.8")
-//
-//    implementation("com.github.yalantis:ucrop:2.2.8")
-}
+    val room_version = "2.8.4"
+    implementation("androidx.room:room-runtime:$room_version")
+    implementation("androidx.room:room-ktx:$room_version")
+    ksp("androidx.room:room-compiler:$room_version")
 
+    // Firebase Realtime Database
+    implementation("com.google.firebase:firebase-database-ktx")
+
+    // WorkManager for background sync
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    // Coil for image loading
+    implementation("io.coil-kt:coil-compose:2.5.0")
+}
