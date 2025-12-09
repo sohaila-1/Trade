@@ -22,16 +22,20 @@ class MessageRepository(
 
     fun getCurrentUserId(): String? = firebaseService.getCurrentUserId()
 
-    // Get chat previews with Firebase sync
+    // Get chat previews - ONLY for current user
     fun getChatPreviews(): Flow<List<ChatPreview>> = flow {
         val currentUserId = getCurrentUserId()
         if (currentUserId == null) {
+            Log.w("MessageRepository", "No current user, returning empty chat previews")
             emit(emptyList())
             return@flow
         }
 
+        Log.d("MessageRepository", "Loading chat previews for user: $currentUserId")
+
         // Start by emitting local data immediately (for offline support)
-        messageDao.getLastMessagesForAllChats()
+        // FIXED: Filter by ownerUserId
+        messageDao.getLastMessagesForAllChats(currentUserId)
             .catch { e ->
                 Log.e("MessageRepository", "Error loading chat previews", e)
                 emit(emptyList())
@@ -52,8 +56,8 @@ class MessageRepository(
                     // Get user info (will fetch from Firebase if not cached)
                     val user = getUserById(partnerId) ?: User(uid = partnerId, username = "Unknown")
 
-                    // Count unread messages
-                    val unreadCount = messageDao.getUnreadCount(partnerId)
+                    // Count unread messages - FIXED: pass ownerUserId
+                    val unreadCount = messageDao.getUnreadCount(partnerId, currentUserId)
 
                     ChatPreview(
                         user = user,
@@ -63,6 +67,7 @@ class MessageRepository(
                     )
                 }.sortedByDescending { it.lastMessageTime }
 
+                Log.d("MessageRepository", "Emitting ${previews.size} chat previews for user $currentUserId")
                 emit(previews)
             }
     }.catch { e ->
@@ -78,9 +83,9 @@ class MessageRepository(
             Log.d("MessageRepository", "Syncing conversation history with $partnerId")
             val messages = firebaseService.fetchMessageHistory(currentUserId, partnerId, limit)
 
-            // Save to local database
+            // Save to local database - FIXED: include ownerUserId
             messages.forEach { message ->
-                messageDao.insertMessage(message.toEntity(partnerId))
+                messageDao.insertMessage(message.toEntity(partnerId, currentUserId))
             }
 
             Log.d("MessageRepository", "Synced ${messages.size} messages for $partnerId")
@@ -89,6 +94,13 @@ class MessageRepository(
         }
     }
 
+    /**
+     * Sync ALL conversations for the current user from Firebase.
+     * This should be called when:
+     * 1. User logs in
+     * 2. App starts with a logged-in user
+     * 3. User opens the chat list screen
+     */
     suspend fun syncAllConversations() {
         val currentUserId = getCurrentUserId() ?: run {
             Log.w("MessageRepository", "Cannot sync conversations - no user logged in")
@@ -108,10 +120,10 @@ class MessageRepository(
                     // Fetch messages for this conversation
                     val messages = firebaseService.fetchMessageHistory(currentUserId, partnerId, limit = 50)
 
-                    // Save to local database
+                    // Save to local database - FIXED: include ownerUserId
                     if (messages.isNotEmpty()) {
                         messages.forEach { message ->
-                            messageDao.insertMessage(message.toEntity(partnerId))
+                            messageDao.insertMessage(message.toEntity(partnerId, currentUserId))
                         }
                         Log.d("MessageRepository", "Synced ${messages.size} messages with $partnerId")
                     }
@@ -136,11 +148,15 @@ class MessageRepository(
         }
     }
 
+    /**
+     * Get messages for a chat with proper offline support
+     * FIXED: Filter by ownerUserId to ensure user data isolation
+     */
     fun getMessagesForChat(partnerId: String): Flow<List<Message>> {
         val currentUserId = getCurrentUserId() ?: return flowOf(emptyList())
 
-        // Local messages flow - this is the source of truth for offline
-        val localMessagesFlow = messageDao.getMessagesForChat(partnerId)
+        // Local messages flow - FIXED: Filter by ownerUserId
+        val localMessagesFlow = messageDao.getMessagesForChat(partnerId, currentUserId)
             .map { entities ->
                 entities.map { it.toMessage(currentUserId) }
             }
@@ -153,7 +169,6 @@ class MessageRepository(
         val remoteMessagesFlow = firebaseService.listenToMessages(currentUserId, partnerId)
             .catch { e ->
                 Log.e("MessageRepository", "Firebase listener error, continuing with local only", e)
-                // Emit empty to signal we should use local only
                 emit(emptyList())
             }
 
@@ -162,52 +177,50 @@ class MessageRepository(
             Log.d("MessageRepository", "Combining: ${localMessages.size} local, ${remoteMessages.size} remote")
 
             if (remoteMessages.isEmpty()) {
-                // No remote messages (offline or error) - use local only
                 Log.d("MessageRepository", "Using local messages only: ${localMessages.size}")
                 localMessages
             } else {
-                // Merge local and remote, saving new remote messages to local DB
-                val mergedMessages = mergeMessages(localMessages, remoteMessages, partnerId)
+                val mergedMessages = mergeMessages(localMessages, remoteMessages, partnerId, currentUserId)
                 Log.d("MessageRepository", "Merged messages: ${mergedMessages.size}")
                 mergedMessages
             }
         }.onStart {
-            // Emit local messages immediately before combine kicks in
-            // This ensures we show something right away
-            val initialLocal = messageDao.getMessagesForChat(partnerId).first()
+            // Emit local messages immediately - FIXED: Filter by ownerUserId
+            val initialLocal = messageDao.getMessagesForChat(partnerId, currentUserId).first()
                 .map { it.toMessage(currentUserId) }
             Log.d("MessageRepository", "Initial emit: ${initialLocal.size} local messages")
             emit(initialLocal)
         }.distinctUntilChanged()
     }
 
+    /**
+     * Merge local and remote messages, saving any new remote messages to local DB
+     * FIXED: Include ownerUserId when saving
+     */
     private suspend fun mergeMessages(
         localMessages: List<Message>,
         remoteMessages: List<Message>,
-        partnerId: String
+        partnerId: String,
+        ownerUserId: String
     ): List<Message> {
         val localIds = localMessages.map { it.id }.toSet()
         val allMessages = localMessages.toMutableList()
 
-        // Add any remote messages not in local and save them
         remoteMessages.forEach { remoteMsg ->
             if (remoteMsg.id !in localIds) {
-                // New message from remote - save to local DB
                 try {
-                    messageDao.insertMessage(remoteMsg.toEntity(partnerId))
+                    // FIXED: Include ownerUserId
+                    messageDao.insertMessage(remoteMsg.toEntity(partnerId, ownerUserId))
                     allMessages.add(remoteMsg)
                     Log.d("MessageRepository", "Saved new remote message: ${remoteMsg.id}")
                 } catch (e: Exception) {
                     Log.e("MessageRepository", "Error saving remote message", e)
                 }
             } else {
-                // Message exists locally - check if remote has updated status
                 val localMsg = localMessages.find { it.id == remoteMsg.id }
                 if (localMsg != null && remoteMsg.status.ordinal > localMsg.status.ordinal) {
-                    // Remote has newer status, update local
                     try {
                         messageDao.updateMessageStatus(remoteMsg.id, remoteMsg.status.name)
-                        // Update in our list too
                         val index = allMessages.indexOfFirst { it.id == remoteMsg.id }
                         if (index >= 0) {
                             allMessages[index] = localMsg.copy(status = remoteMsg.status)
@@ -222,6 +235,10 @@ class MessageRepository(
         return allMessages.sortedBy { it.timestamp }
     }
 
+    /**
+     * Send message with immediate local save
+     * FIXED: Include ownerUserId for proper data isolation
+     */
     suspend fun sendMessage(receiverId: String, text: String, isOnline: Boolean): Result<Unit> {
         val currentUserId = getCurrentUserId() ?: return Result.failure(Exception("Not logged in"))
 
@@ -236,10 +253,9 @@ class MessageRepository(
             isSentByCurrentUser = true
         )
 
-        // Save to local database FIRST for immediate UI update
-        // Room Flow will automatically emit this new message
+        // Save to local database FIRST - FIXED: Include ownerUserId
         try {
-            messageDao.insertMessage(message.toEntity(receiverId))
+            messageDao.insertMessage(message.toEntity(receiverId, currentUserId))
             Log.d("MessageRepository", "Message saved locally: $messageId with status ${message.status}")
         } catch (e: Exception) {
             Log.e("MessageRepository", "Failed to save message locally", e)
@@ -247,16 +263,13 @@ class MessageRepository(
         }
 
         return if (isOnline) {
-            // Try to send to Firebase
             try {
                 val result = firebaseService.sendMessage(message)
                 if (result.isSuccess) {
-                    // Update status in local DB
                     messageDao.updateMessageStatus(messageId, MessageStatus.SENT.name)
                     Log.d("MessageRepository", "Message sent to Firebase: $messageId")
                     Result.success(Unit)
                 } else {
-                    // Failed to send, keep as PENDING for retry
                     messageDao.updateMessageStatus(messageId, MessageStatus.PENDING.name)
                     Log.e("MessageRepository", "Failed to send to Firebase")
                     Result.failure(result.exceptionOrNull() ?: Exception("Send failed"))
@@ -267,20 +280,21 @@ class MessageRepository(
                 Result.failure(e)
             }
         } else {
-            // Offline - will be synced later
             Log.d("MessageRepository", "Message queued for sync (offline)")
             Result.success(Unit)
         }
     }
 
-    // Sync pending messages when coming online
+    // Sync pending messages when coming online - FIXED: Filter by ownerUserId
     suspend fun syncPendingMessages(): Result<Unit> {
+        val currentUserId = getCurrentUserId() ?: return Result.failure(Exception("Not logged in"))
+
         return try {
-            val pendingMessages = messageDao.getPendingMessages()
+            val pendingMessages = messageDao.getPendingMessages(currentUserId)
             Log.d("MessageRepository", "Syncing ${pendingMessages.size} pending messages")
 
             pendingMessages.forEach { entity ->
-                val message = entity.toMessage(entity.senderId)
+                val message = entity.toMessage(currentUserId)
                 val result = firebaseService.sendMessage(message)
 
                 if (result.isSuccess) {
@@ -298,23 +312,20 @@ class MessageRepository(
         }
     }
 
-    // Mark messages as seen
+    // Mark messages as seen - FIXED: Include ownerUserId
     suspend fun markMessagesAsSeen(partnerId: String) {
         val currentUserId = getCurrentUserId() ?: return
 
-        // Update local first (works offline)
         try {
-            messageDao.markMessagesAsSeen(partnerId)
+            messageDao.markMessagesAsSeen(partnerId, currentUserId)
         } catch (e: Exception) {
             Log.e("MessageRepository", "Error marking messages as seen locally", e)
         }
 
-        // Then try Firebase
         try {
             firebaseService.markMessagesAsSeen(currentUserId, partnerId)
         } catch (e: Exception) {
             Log.e("MessageRepository", "Error marking messages as seen in Firebase", e)
-            // Local is already updated, so this is fine
         }
     }
 
@@ -325,14 +336,12 @@ class MessageRepository(
             return@flow
         }
 
-        // First emit cached results
         userDao.searchUsers(query).first().let { cached ->
             if (cached.isNotEmpty()) {
                 emit(cached.map { it.toUser() })
             }
         }
 
-        // Then fetch from Firebase and update cache
         try {
             val remoteUsers = firebaseService.searchUsers(query)
             if (remoteUsers.isNotEmpty()) {
@@ -341,20 +350,16 @@ class MessageRepository(
             }
         } catch (e: Exception) {
             Log.e("MessageRepository", "Error searching users remotely", e)
-            // If Firebase fails, just use cached results
         }
     }
 
     // Get user by ID with caching
     suspend fun getUserById(userId: String): User? {
-        // Check cache first
         val cached = userDao.getUserById(userId)
 
-        // Return cached immediately if available, then try to update
         return try {
             val remoteUser = firebaseService.getUserById(userId)
             if (remoteUser != null) {
-                // Update cache
                 userDao.insertUser(remoteUser.toEntity())
                 remoteUser
             } else {
@@ -362,23 +367,36 @@ class MessageRepository(
             }
         } catch (e: Exception) {
             Log.e("MessageRepository", "Error getting user by ID, using cache", e)
-            // Return cached version if Firebase fails
             cached?.toUser()
         }
     }
 
     // Clear all local data on logout
     suspend fun clearAllData() {
+        val currentUserId = getCurrentUserId()
         try {
-            database.clearAllTables()
-            Log.d("MessageRepository", "All local data cleared")
+            if (currentUserId != null) {
+                // Clear only current user's messages
+                messageDao.clearMessagesForUser(currentUserId)
+                Log.d("MessageRepository", "Cleared messages for user: $currentUserId")
+            } else {
+                // Fallback: clear everything
+                database.clearAllTables()
+                Log.d("MessageRepository", "All local data cleared")
+            }
         } catch (e: Exception) {
             Log.e("MessageRepository", "Error clearing data", e)
+            // Fallback to clearing all tables
+            try {
+                database.clearAllTables()
+            } catch (e2: Exception) {
+                Log.e("MessageRepository", "Error clearing all tables", e2)
+            }
         }
     }
 
-    // Extension functions for mapping
-    private fun Message.toEntity(chatPartnerId: String) = MessageEntity(
+    // Extension functions for mapping - FIXED: Include ownerUserId
+    private fun Message.toEntity(chatPartnerId: String, ownerUserId: String) = MessageEntity(
         id = id,
         senderId = senderId,
         receiverId = receiverId,
@@ -386,7 +404,8 @@ class MessageRepository(
         timestamp = timestamp,
         status = status.name,
         isSentByCurrentUser = isSentByCurrentUser,
-        chatPartnerId = chatPartnerId
+        chatPartnerId = chatPartnerId,
+        ownerUserId = ownerUserId
     )
 
     private fun MessageEntity.toMessage(currentUserId: String) = Message(

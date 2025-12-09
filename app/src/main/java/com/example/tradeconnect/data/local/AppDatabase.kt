@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [MessageEntity::class, UserEntity::class],
-    version = 1,
+    version = 2, // Incremented due to schema change (added ownerUserId)
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -25,7 +25,12 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "tradeconnect_database"
-                ).build()
+                )
+                    // Use destructive migration for simplicity
+                    // This will clear the database when schema changes
+                    // which is fine since data is synced from Firebase anyway
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

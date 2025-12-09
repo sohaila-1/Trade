@@ -127,7 +127,7 @@ class FakeProfileRepository : IProfileRepository {
         return Result.success(
             User(
                 uid = uid,
-                username = "johndoe",
+                username = "John Doe",
                 email = "johndoe@gmail.com",
                 mobile = "+91-123456789",
                 profileImageUrl = ""

@@ -27,6 +27,11 @@ import com.example.tradeconnect.viewmodel.AuthViewModel
 @Composable
 fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
+    // Clear error when screen is first shown
+    LaunchedEffect(Unit) {
+        viewModel.clearError()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -45,29 +50,45 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text("Log in to App", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.align(Alignment.CenterHorizontally))
+        Text(
+            "Log in to App",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
         OutlinedTextField(
             value = viewModel.email,
-            onValueChange = { viewModel.email = it },
-            label = { Text("Phone, email or username") },
+            onValueChange = {
+                viewModel.email = it
+                viewModel.clearError() // Clear error when user types
+            },
+            label = { Text("Email") },
             leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(50.dp)
+            shape = RoundedCornerShape(50.dp),
+            enabled = !viewModel.isLoading,
+            singleLine = true,
+            isError = viewModel.errorMessage?.contains("email", ignoreCase = true) == true
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
             value = viewModel.password,
-            onValueChange = { viewModel.password = it },
+            onValueChange = {
+                viewModel.password = it
+                viewModel.clearError() // Clear error when user types
+            },
             label = { Text("Password") },
             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(50.dp)
+            shape = RoundedCornerShape(50.dp),
+            enabled = !viewModel.isLoading,
+            singleLine = true,
+            isError = viewModel.errorMessage?.contains("password", ignoreCase = true) == true
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -79,14 +100,29 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = viewModel.rememberMe,
-                    onCheckedChange = { checked -> viewModel.updateRememberMe(checked) }
+                    onCheckedChange = { checked -> viewModel.updateRememberMe(checked) },
+                    enabled = !viewModel.isLoading
                 )
                 Text("Remember me")
             }
 
-            TextButton(onClick = { /* TODO: forgot password */ }) {
-                Text("Forgot password?", color = TBlue)
-            }
+//            TextButton(
+//                onClick = { /* TODO: forgot password */ },
+//                enabled = !viewModel.isLoading
+//            ) {
+//                Text("Forgot password?", color = TBlue)
+//            }
+        }
+
+        // Error message
+        viewModel.errorMessage?.let { error ->
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = error,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
         Spacer(modifier = Modifier.height(18.dp))
@@ -94,7 +130,6 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
         Button(
             onClick = {
                 viewModel.login {
-                    // navigate to home, clear backstack of login/signup
                     navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
@@ -107,9 +142,18 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(55.dp),
-            shape = RoundedCornerShape(50.dp)
+            shape = RoundedCornerShape(50.dp),
+            enabled = !viewModel.isLoading
         ) {
-            Text("Log in")
+            if (viewModel.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Log in")
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -119,13 +163,15 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text("Don't have an account?")
-            TextButton(onClick = { navController.navigate("signup") }) {
+            TextButton(
+                onClick = {
+                    viewModel.clearError()
+                    navController.navigate("signup")
+                },
+                enabled = !viewModel.isLoading
+            ) {
                 Text("Sign Up", color = TBlue)
             }
-        }
-
-        viewModel.errorMessage?.let {
-            Text(it, color = MaterialTheme.colorScheme.error)
         }
     }
 }
@@ -135,16 +181,13 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 fun LoginScreenPreview() {
     val navController = rememberNavController()
 
-    // Fake repo and prefs for preview
     val fakeRepo = FakeAuthRepository()
     val fakePrefs = FakeUserPreferences()
 
-    // Use ViewModelProvider with your Factory
     val previewViewModel: AuthViewModel = viewModel(
         factory = AuthViewModel.Factory(fakeRepo, fakePrefs)
     )
 
-    // Pre-fill fields for preview
     previewViewModel.apply {
         email = "preview@example.com"
         password = "password123"
@@ -154,7 +197,3 @@ fun LoginScreenPreview() {
         LoginScreen(navController = navController, viewModel = previewViewModel)
     }
 }
-
-
-
-
