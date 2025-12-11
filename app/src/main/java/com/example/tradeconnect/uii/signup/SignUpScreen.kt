@@ -2,8 +2,10 @@ package com.example.tradeconnect.uii.signup
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -17,97 +19,125 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.tradeconnect.R
-import com.example.tradeconnect.data.datastore.FakeUserPreferences
-import com.example.tradeconnect.repository.FakeAuthRepository
 import com.example.tradeconnect.ui.theme.TBlue
 import com.example.tradeconnect.viewmodel.AuthViewModel
 
 @Composable
 fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
-    // set default rememberMe = true on sign up screen
+
     LaunchedEffect(Unit) {
         viewModel.updateRememberMe(true)
+        viewModel.clearError()
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 32.dp),
-        verticalArrangement = Arrangement.Center
+            .verticalScroll(rememberScrollState())
+            .padding(32.dp)
     ) {
+
         Image(
             painter = painterResource(id = R.drawable.logo),
-            contentDescription = "Logo",
+            contentDescription = null,
             modifier = Modifier
                 .size(90.dp)
                 .align(Alignment.CenterHorizontally)
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(Modifier.height(24.dp))
 
-        Text("Sign in to App", style = MaterialTheme.typography.h5, modifier = Modifier.align(Alignment.CenterHorizontally))
+        Text(
+            "Sign up for App",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(Modifier.height(24.dp))
 
+        // FIRST NAME
         OutlinedTextField(
             value = viewModel.firstName,
-            onValueChange = { viewModel.firstName = it },
-            label = { Text("Name") },
-            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+            onValueChange = {
+                viewModel.firstName = it
+                viewModel.clearError()
+            },
+            label = { Text("First Name *") },
+            leadingIcon = { Icon(Icons.Default.Person, null) },
             modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
             shape = RoundedCornerShape(50.dp)
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
+        // LAST NAME
         OutlinedTextField(
             value = viewModel.lastName,
-            onValueChange = { viewModel.lastName = it },
-            label = { Text("Last name") },
-            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+            onValueChange = {
+                viewModel.lastName = it
+                viewModel.clearError()
+            },
+            label = { Text("Last Name *") },
+            leadingIcon = { Icon(Icons.Default.Person, null) },
             modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
             shape = RoundedCornerShape(50.dp)
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
+        // EMAIL
         OutlinedTextField(
             value = viewModel.email,
-            onValueChange = { viewModel.email = it },
-            label = { Text("Email") },
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+            onValueChange = {
+                viewModel.email = it
+                viewModel.clearError()
+            },
+            label = { Text("Email *") },
+            leadingIcon = { Icon(Icons.Default.Email, null) },
             modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
             shape = RoundedCornerShape(50.dp)
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
+        // PHONE OPTIONAL
         OutlinedTextField(
             value = viewModel.phone,
-            onValueChange = { viewModel.phone = it },
-            label = { Text("Phone") },
-            leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
+            onValueChange = {
+                viewModel.phone = it
+                viewModel.clearError()
+            },
+            label = { Text("Phone (optional)") },
+            leadingIcon = { Icon(Icons.Default.Phone, null) },
             modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
             shape = RoundedCornerShape(50.dp)
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
+        // PASSWORD
         OutlinedTextField(
             value = viewModel.password,
-            onValueChange = { viewModel.password = it },
-            label = { Text("Password") },
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+            onValueChange = {
+                viewModel.password = it
+                viewModel.clearError()
+            },
+            label = { Text("Password *") },
+            leadingIcon = { Icon(Icons.Default.Lock, null) },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
             shape = RoundedCornerShape(50.dp)
         )
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(Modifier.height(12.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
@@ -117,7 +147,16 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
             Text("Keep me signed in")
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        // ERROR
+        viewModel.errorMessage?.let {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                it,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
+        Spacer(Modifier.height(20.dp))
 
         Button(
             onClick = {
@@ -127,62 +166,26 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
                     }
                 }
             },
-            colors = ButtonDefaults.buttonColors(
-                backgroundColor = TBlue,
-                contentColor = Color.White
-            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(55.dp),
+            colors = ButtonDefaults.buttonColors(TBlue),
             shape = RoundedCornerShape(50.dp)
         ) {
-            Text("Sign in")
+            Text("Sign Up")
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text("You have an account?")
+        Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+            Text("Already have an account?")
             TextButton(onClick = { navController.navigate("login") }) {
-                Text("Sign In", color = TBlue)
+                Text("Log In", color = TBlue)
             }
-        }
-
-        viewModel.errorMessage?.let {
-            Text(it, color = MaterialTheme.colors.error)
         }
     }
 }
 
-
-@Preview(showBackground = true)
-@Composable
-fun SignUpScreenPreview() {
-    val navController = rememberNavController()
-
-    // Fake repo and prefs for preview
-    val fakeRepo = FakeAuthRepository()
-    val fakePrefs = FakeUserPreferences()
-
-    // Use ViewModelProvider with your Factory
-    val previewViewModel: AuthViewModel = viewModel(
-        factory = AuthViewModel.Factory(fakeRepo, fakePrefs)
-    )
-
-    // Pre-fill fields for preview
-    previewViewModel.apply {
-        firstName = "Jane"
-        lastName = "Doe"
-        email = "jane.doe@example.com"
-        phone = "+33 612345678"
-        password = "password123"
-        updateRememberMe(true)
-    }
-
-    MaterialTheme {
-        SignUpScreen(navController = navController, viewModel = previewViewModel)
-    }
+private fun AuthViewModel.clearError() {
+    TODO("Not yet implemented")
 }

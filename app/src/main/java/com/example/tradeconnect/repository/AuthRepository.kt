@@ -1,27 +1,48 @@
 package com.example.tradeconnect.repository
 
+import com.example.tradeconnect.model.AppUser
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 
-open class AuthRepository(private val firebaseAuth: FirebaseAuth) : IAuthRepository {
+class AuthRepository(
+    private val auth: FirebaseAuth
+) : IAuthRepository {
 
     override fun signUp(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
-        firebaseAuth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) onResult(true, null)
-                else onResult(false, task.exception?.message)
+        auth.createUserWithEmailAndPassword(email, password)
+            .addOnSuccessListener {
+                onResult(true, null)
+            }
+            .addOnFailureListener {
+                onResult(false, it.message)
             }
     }
 
     override fun login(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
-        firebaseAuth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) onResult(true, null)
-                else onResult(false, task.exception?.message)
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnSuccessListener {
+                onResult(true, null)
+            }
+            .addOnFailureListener {
+                onResult(false, it.message)
             }
     }
 
-    override fun logout() = firebaseAuth.signOut()
+    override fun logout() {
+        auth.signOut()
+    }
 
-    override fun getCurrentUser(): FirebaseUser? = firebaseAuth.currentUser
+    override fun getCurrentUser(): FirebaseUser? {
+        return auth.currentUser
+    }
+
+    // 🔥🔥🔥 LE PLUS IMPORTANT : retourne un AppUser
+    override fun getCurrentUserModel(): AppUser? {
+        val user = auth.currentUser ?: return null
+
+        return AppUser(
+            uid = user.uid,
+            username = user.email?.substringBefore("@") ?: "unknown"
+        )
+    }
 }

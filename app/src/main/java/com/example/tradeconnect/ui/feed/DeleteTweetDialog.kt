@@ -13,8 +13,8 @@ import com.example.tradeconnect.viewmodel.TweetViewModel
 fun DeleteTweetDialog(
     show: Boolean,
     tweetId: String,
-    onDismiss: () -> Unit,
-    viewModel: TweetViewModel
+    viewModel: TweetViewModel,
+    onDismiss: () -> Unit
 ) {
     if (!show) return
 
@@ -25,18 +25,26 @@ fun DeleteTweetDialog(
     ) {
         Column(Modifier.padding(24.dp)) {
 
-            Text("Supprimer", color = Color.Red, modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    viewModel.deleteTweet(tweetId)
-                    onDismiss()
-                })
+            Text(
+                text = "Supprimer",
+                color = Color.Red,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        viewModel.deleteTweet(tweetId)
+                        onDismiss()
+                    }
+            )
 
             Spacer(Modifier.height(16.dp))
 
-            Text("Annuler", modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onDismiss() })
+            Text(
+                text = "Annuler",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onDismiss() }
+            )
         }
     }
 }
+

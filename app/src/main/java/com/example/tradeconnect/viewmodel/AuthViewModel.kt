@@ -3,108 +3,152 @@ package com.example.tradeconnect.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.compose.runtime.*
+import com.example.tradeconnect.model.AppUser
+import com.example.tradeconnect.repository.IAuthRepository
+import com.example.tradeconnect.data.datastore.IUserPreferences
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.*
-import com.example.tradeconnect.data.datastore.IUserPreferences
-import com.example.tradeconnect.repository.IAuthRepository
 
 class AuthViewModel(
     private val repo: IAuthRepository,
     private val prefs: IUserPreferences
 ) : ViewModel() {
 
-    // form fields
+    // -------------------------
+    // 🔹 Champs de formulaire
+    // -------------------------
     var email by mutableStateOf("")
     var password by mutableStateOf("")
+    var errorMessage by mutableStateOf<String?>(null)
+    var isLoading by mutableStateOf(false)
+
+    // --- SIGN UP FIELDS ---
     var firstName by mutableStateOf("")
     var lastName by mutableStateOf("")
     var phone by mutableStateOf("")
 
-    // UI state
-    var errorMessage by mutableStateOf<String?>(null)
-    var isLoading by mutableStateOf(false)
+    // Firebase auth instance
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
-    // remember-me flag (UI state)
+    // -------------------------
+    // 🔹 Remember Me
+    // -------------------------
     var rememberMe by mutableStateOf(true)
         private set
 
-    private val _isLoggedIn = MutableStateFlow<Boolean?>(null)
-    val isLoggedIn = _isLoggedIn // observe in UI
-
-    init {
-        viewModelScope.launch {
-            prefs.rememberMeFlow.collectLatest { stored ->
-                val current = repo.getCurrentUser()
-                _isLoggedIn.value = if (stored && current != null) true else false
-            }
-        }
-    }
-
     fun updateRememberMe(value: Boolean) {
         rememberMe = value
+        viewModelScope.launch { prefs.setRememberMe(value) }
+    }
+
+    // -------------------------
+    // 🔹 Utilisateur connecté
+    // -------------------------
+    var currentUser = mutableStateOf<AppUser?>(null)
+        private set
+
+    private val _isLoggedIn = MutableStateFlow<Boolean?>(null)
+    val isLoggedIn = _isLoggedIn
+
+
+    // -------------------------
+    // INIT → vérifie si user déjà loggé
+    // -------------------------
+    init {
         viewModelScope.launch {
-            prefs.setRememberMe(value)
+            prefs.rememberMeFlow.collectLatest { shouldRemember ->
+
+                val user = repo.getCurrentUserModel()  // AppUser?
+
+                if (shouldRemember && user != null) {
+                    currentUser.value = user
+                    _isLoggedIn.value = true
+                } else {
+                    _isLoggedIn.value = false
+                }
+            }
         }
     }
 
+    // -------------------------
+    // LOGIN
+    // -------------------------
     fun login(onSuccess: () -> Unit) {
         isLoading = true
+
         repo.login(email, password) { success, error ->
             isLoading = false
-            if (success) {
-                viewModelScope.launch {
-                    // persist remember me if checked
-                    prefs.setRememberMe(rememberMe)
-                    // if we kept user logged in, mark loggedIn true
-                    _isLoggedIn.value = true
-                    onSuccess()
-                }
-            } else {
+
+            if (!success) {
                 errorMessage = error
+                return@login
             }
+
+            val user = repo.getCurrentUserModel()
+            currentUser.value = user
+            _isLoggedIn.value = true
+
+            viewModelScope.launch { prefs.setRememberMe(rememberMe) }
+
+            onSuccess()
         }
     }
 
+    // -------------------------
+    // SIGN UP
+    // -------------------------
     fun signUp(onSuccess: () -> Unit) {
         isLoading = true
+
         repo.signUp(email, password) { success, error ->
             isLoading = false
-            if (success) {
-                viewModelScope.launch {
-                    // default keep logged in after sign up
-                    // if user didn't explicitly set rememberMe, keep it true by default
-                    if (!rememberMe) {
-                        rememberMe = true
-                        prefs.setRememberMe(true)
-                    } else {
-                        prefs.setRememberMe(rememberMe)
-                    }
-                    _isLoggedIn.value = true
-                    onSuccess()
-                }
-            } else {
+
+            if (!success) {
                 errorMessage = error
+                return@signUp
             }
+
+            val user = repo.getCurrentUserModel()
+            currentUser.value = user
+            _isLoggedIn.value = true
+
+            viewModelScope.launch { prefs.setRememberMe(rememberMe) }
+
+            onSuccess()
         }
     }
 
-    fun logout(onComplete: (() -> Unit)? = null) {
+    // -------------------------
+    // LOGOUT
+    // -------------------------
+    fun logout() {
         repo.logout()
-        viewModelScope.launch {
-//            prefs.setRememberMe(false)
-//            rememberMe = false
-            _isLoggedIn.value = false
-            onComplete?.invoke()
-        }
+        currentUser.value = null
+        _isLoggedIn.value = false
+
+        viewModelScope.launch { prefs.setRememberMe(false) }
     }
 
+
+    // -------------------------
+    // UTILITY → obtenir UID utilisateur Firebase
+    // -------------------------
+    fun getCurrentUserId(): String? {
+        return auth.currentUser?.uid
+    }
+
+
+    // -------------------------
+    // FACTORY
+    // -------------------------
     class Factory(
         private val repo: IAuthRepository,
         private val prefs: IUserPreferences
     ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
+
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return AuthViewModel(repo, prefs) as T
         }

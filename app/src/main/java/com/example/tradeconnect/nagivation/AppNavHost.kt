@@ -1,6 +1,5 @@
 package com.example.tradeconnect.navigation
 
-
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -13,11 +12,15 @@ import androidx.compose.material.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
+// Repositories
+import com.example.tradeconnect.repository.TweetRepository
+import com.example.tradeconnect.repository.UserRepository
+import com.example.tradeconnect.repository.FollowRepository
+
 // UI Screens
 import com.example.tradeconnect.ui.feed.FeedScreen
 import com.example.tradeconnect.ui.feed.CreateTweetScreen
 import com.example.tradeconnect.ui.feed.EditTweetScreen
-
 import com.example.tradeconnect.uii.chat.ChatScreen
 import com.example.tradeconnect.uii.home.HomeScreen
 import com.example.tradeconnect.uii.login.LoginScreen
@@ -27,16 +30,46 @@ import com.example.tradeconnect.uii.signup.SignUpScreen
 import com.example.tradeconnect.viewmodel.AuthViewModel
 import com.example.tradeconnect.viewmodel.TweetViewModel
 
+// Firebase
+import com.google.firebase.firestore.FirebaseFirestore
+
 @Composable
 fun AppNavHost(
     navController: NavHostController,
     authViewModel: AuthViewModel,
     startDestination: String
 ) {
-    val tweetViewModel: TweetViewModel = viewModel()
+    // ------------------------------
+    // INIT REPOSITORIES
+    // ------------------------------
+
+    val tweetRepo = TweetRepository(
+        firestore = FirebaseFirestore.getInstance() // ✔️ FIN DU CRASH !
+    )
+
+    val followRepo = FollowRepository()
+    val userRepo = UserRepository()
+
+    // ViewModel Auth déjà injecté
+    val authVM = authViewModel
+
+    // ------------------------------
+    // INIT TWEET VIEWMODEL
+    // ------------------------------
+    val tweetVM = viewModel<TweetViewModel>(
+        factory = TweetViewModel.Factory(
+            tweetRepo = tweetRepo,
+            followRepo = followRepo,
+            authVM = authVM,
+            userRepo = userRepo
+        )
+    )
 
     var isDarkMode by remember { mutableStateOf(false) }
 
+    // ------------------------------
+    // NAVIGATION GRAPH
+    // ------------------------------
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -62,23 +95,22 @@ fun AppNavHost(
             ChatScreen(navController)
         }
 
-        // FEED (Accueil Tweets)
+        // FEED
         composable("feed") {
             FeedScreen(
                 navController = navController,
-                viewModel = tweetViewModel,
+                viewModel = tweetVM,
                 isDarkMode = isDarkMode,
                 onToggleTheme = { isDarkMode = !isDarkMode }
             )
         }
 
-        // CREATE NEW TWEET
+        // CREATE TWEET
         composable("createTweet") {
-            CreateTweetScreen(navController, tweetViewModel)
+            CreateTweetScreen(navController, tweetVM)
         }
 
-
-        // EDIT TWEET — Route dynamique
+        // EDIT TWEET
         composable(
             route = "editTweet/{tweetId}",
             arguments = listOf(navArgument("tweetId") { type = NavType.StringType })
@@ -88,11 +120,9 @@ fun AppNavHost(
             EditTweetScreen(
                 navController = navController,
                 tweetId = tweetId,
-                viewModel = tweetViewModel
+                viewModel = tweetVM
             )
         }
-
-
 
         // PROFILE
         composable("profile") {

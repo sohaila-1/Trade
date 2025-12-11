@@ -2,9 +2,9 @@ package com.example.tradeconnect.uii.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.*
@@ -27,6 +27,10 @@ import com.example.tradeconnect.viewmodel.AuthViewModel
 @Composable
 fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
+    LaunchedEffect(Unit) {
+        viewModel.clearError()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -34,7 +38,6 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
         verticalArrangement = Arrangement.Center
     ) {
 
-        // Logo & title
         Image(
             painter = painterResource(id = R.drawable.logo),
             contentDescription = "Logo",
@@ -45,65 +48,82 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text("Log in to App", style = MaterialTheme.typography.h5, modifier = Modifier.align(Alignment.CenterHorizontally))
+        Text(
+            "Log in to App",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // EMAIL
         OutlinedTextField(
             value = viewModel.email,
-            onValueChange = { viewModel.email = it },
-            label = { Text("Phone, email or username") },
-            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+            onValueChange = {
+                viewModel.email = it
+                viewModel.clearError()
+            },
+            label = { Text("Email") },
+            leadingIcon = { Icon(Icons.Default.Person, null) },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(50.dp)
+            shape = RoundedCornerShape(50.dp),
+            enabled = !viewModel.isLoading,
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // PASSWORD
         OutlinedTextField(
             value = viewModel.password,
-            onValueChange = { viewModel.password = it },
+            onValueChange = {
+                viewModel.password = it
+                viewModel.clearError()
+            },
             label = { Text("Password") },
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+            leadingIcon = { Icon(Icons.Default.Lock, null) },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(50.dp)
+            shape = RoundedCornerShape(50.dp),
+            enabled = !viewModel.isLoading,
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // REMEMBER ME
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = viewModel.rememberMe,
-                    onCheckedChange = { checked -> viewModel.updateRememberMe(checked) }
-                )
-                Text("Remember me")
-            }
+            Checkbox(
+                checked = viewModel.rememberMe,
+                onCheckedChange = { viewModel.updateRememberMe(it) }
+            )
+            Text("Remember me")
+        }
 
-            TextButton(onClick = { /* TODO: forgot password */ }) {
-                Text("Forgot password?", color = TBlue)
-            }
+        // ERROR MESSAGE
+        viewModel.errorMessage?.let {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                it,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
 
         Spacer(modifier = Modifier.height(18.dp))
 
+        // LOGIN BUTTON
         Button(
             onClick = {
                 viewModel.login {
-                    // navigate to home, clear backstack of login/signup
-                    navController.navigate("feed") {
+                    navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
                 }
             },
-            colors = ButtonDefaults.buttonColors(
-                backgroundColor = TBlue,
-                contentColor = Color.White
-            ),
+            colors = ButtonDefaults.buttonColors(TBlue),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(55.dp),
@@ -115,46 +135,33 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(
-            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text("Don't have an account?")
-            TextButton(onClick = { navController.navigate("signup") }) {
+            TextButton(
+                onClick = {
+                    viewModel.clearError()
+                    navController.navigate("signup")
+                }
+            ) {
                 Text("Sign Up", color = TBlue)
             }
         }
-
-        viewModel.errorMessage?.let {
-            Text(it, color = MaterialTheme.colors.error)
-        }
     }
+}
+
+private fun AuthViewModel.clearError() {
+    TODO("Not yet implemented")
 }
 
 @Preview(showBackground = true)
 @Composable
 fun LoginScreenPreview() {
     val navController = rememberNavController()
-
-    // Fake repo and prefs for preview
-    val fakeRepo = FakeAuthRepository()
-    val fakePrefs = FakeUserPreferences()
-
-    // Use ViewModelProvider with your Factory
     val previewViewModel: AuthViewModel = viewModel(
-        factory = AuthViewModel.Factory(fakeRepo, fakePrefs)
+        factory = AuthViewModel.Factory(FakeAuthRepository(), FakeUserPreferences())
     )
-
-    // Pre-fill fields for preview
-    previewViewModel.apply {
-        email = "preview@example.com"
-        password = "password123"
-    }
-
     MaterialTheme {
         LoginScreen(navController = navController, viewModel = previewViewModel)
     }
 }
-
-
-
-
