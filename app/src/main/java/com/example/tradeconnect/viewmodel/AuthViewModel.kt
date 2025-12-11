@@ -3,8 +3,6 @@ package com.example.tradeconnect.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.tradeconnect.data.datastore.UserPreferences
-import com.example.tradeconnect.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -33,13 +31,13 @@ class AuthViewModel(
         private set
 
     private val _isLoggedIn = MutableStateFlow<Boolean?>(null)
-    val isLoggedIn = _isLoggedIn // observe in UI
+    val isLoggedIn = _isLoggedIn
 
     init {
         viewModelScope.launch {
             prefs.rememberMeFlow.collectLatest { stored ->
                 val current = repo.getCurrentUser()
-                _isLoggedIn.value = if (stored && current != null) true else false
+                _isLoggedIn.value = stored && current != null
             }
         }
     }
@@ -71,7 +69,8 @@ class AuthViewModel(
 
     fun signUp(onSuccess: () -> Unit) {
         isLoading = true
-        repo.signUp(email, password) { success, error ->
+        // Pass all signup fields to repository
+        repo.signUp(email, password, firstName, lastName, phone) { success, error ->
             isLoading = false
             if (success) {
                 viewModelScope.launch {
@@ -95,8 +94,6 @@ class AuthViewModel(
     fun logout(onComplete: (() -> Unit)? = null) {
         repo.logout()
         viewModelScope.launch {
-//            prefs.setRememberMe(false)
-//            rememberMe = false
             _isLoggedIn.value = false
             onComplete?.invoke()
         }

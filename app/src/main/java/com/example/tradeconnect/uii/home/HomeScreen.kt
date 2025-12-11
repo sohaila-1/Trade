@@ -1,9 +1,9 @@
 package com.example.tradeconnect.uii.home
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Button
-import androidx.compose.material.Text
-import androidx.compose.material.ButtonDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,11 +26,23 @@ fun HomeScreen(navController: NavController, viewModel: AuthViewModel) {
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
+            onClick = { navController.navigate("userprofile") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(55.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = TBlue, contentColor = androidx.compose.ui.graphics.Color.White)
+        ) {
+            Text("User Profile")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(
             onClick = { navController.navigate("chat") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(55.dp),
-            colors = ButtonDefaults.buttonColors(backgroundColor = TBlue, contentColor = androidx.compose.ui.graphics.Color.White)
+            colors = ButtonDefaults.buttonColors(containerColor = TBlue, contentColor = androidx.compose.ui.graphics.Color.White)
         ) {
             Text("Chat")
         }
