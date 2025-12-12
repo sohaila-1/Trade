@@ -176,4 +176,17 @@ class TweetViewModel(
             return TweetViewModel(tweetRepo, followRepo, authVM, userRepo) as T
         }
     }
+
+    fun toggleLike(tweetId: String) {
+        val uid = authVM.getCurrentUserId() ?: return
+        tweetRepo.toggleLike(tweetId, uid)
+    }
+
+    fun toggleSave(tweetId: String) {
+        val uid = authVM.getCurrentUserId() ?: return
+        tweetRepo.toggleSave(tweetId, uid)
+    }
+
+
+
 }

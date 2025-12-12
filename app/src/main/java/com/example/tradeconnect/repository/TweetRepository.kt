@@ -51,4 +51,39 @@ class TweetRepository(private val firestore: FirebaseFirestore) {
             }
     }
 
+    fun toggleLike(tweetId: String, uid: String) {
+        val ref = tweetsRef.document(tweetId)
+
+        firestore.runTransaction { tx ->
+            val snap = tx.get(ref)
+            val likes = snap.get("likes") as? List<String> ?: emptyList()
+
+            val updatedLikes = if (uid in likes) {
+                likes - uid   // unlike
+            } else {
+                likes + uid   // like
+            }
+
+            tx.update(ref, "likes", updatedLikes)
+        }
+    }
+    fun toggleSave(tweetId: String, uid: String) {
+        val ref = tweetsRef.document(tweetId)
+
+        firestore.runTransaction { tx ->
+            val snap = tx.get(ref)
+            val saves = snap.get("saves") as? List<String> ?: emptyList()
+
+            val updatedSaves = if (uid in saves) {
+                saves - uid
+            } else {
+                saves + uid
+            }
+
+            tx.update(ref, "saves", updatedSaves)
+        }
+    }
+
+
+
 }

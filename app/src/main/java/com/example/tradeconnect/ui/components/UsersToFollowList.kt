@@ -8,13 +8,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.isSystemInDarkTheme
 import com.example.tradeconnect.data.model.User
+import com.example.tradeconnect.ui.theme.LightText
 
-// 🔥 LISTE DES UTILISATEURS À SUIVRE
+// 🌟 Couleurs Twitter
+val TwitterBlue = Color(0xFF1DA1F2)
+val TwitterBlueDark = Color(0xFF1A8CD8)
+val LightGrayDark = Color(0xFF9CA3AF)
+
+// 🔥 LISTE DES UTILISATEURS
 @Composable
 fun UsersToFollowList(
     users: List<User>,
@@ -26,21 +36,18 @@ fun UsersToFollowList(
         modifier = Modifier
             .fillMaxWidth()
             .animateContentSize()
-    )
- {
-     items(users) { user ->
-         UserFollowItem(
-             user = user,
-             isFollowing = followingIds.contains(user.uid),
-             lastTweet = getLastTweet(user.uid),
-             onToggleFollow = onToggleFollow
-         )
-     }
-
+    ) {
+        items(users) { user ->
+            UserFollowItem(
+                user = user,
+                isFollowing = followingIds.contains(user.uid),
+                lastTweet = getLastTweet(user.uid),
+                onToggleFollow = onToggleFollow
+            )
+        }
     }
 }
 
-// 🔥 UN ITEM : UN USER + SON DERNIER TWEET + BOUTON SUIVRE
 @Composable
 fun UserFollowItem(
     user: User,
@@ -48,10 +55,12 @@ fun UserFollowItem(
     lastTweet: String,
     onToggleFollow: (String, Boolean) -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 16.dp)
+            .padding(vertical = 10.dp, horizontal = 18.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -59,89 +68,89 @@ fun UserFollowItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            // --- SECTION GAUCHE : AVATAR + NOMS
             Row(verticalAlignment = Alignment.CenterVertically) {
 
-                Avatar(user.username)
+                Avatar(username = user.username)
 
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Column {
                     Text(
                         user.username,
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
                         "@${user.uid.take(7)}",
-                        color = Color.Gray,
-                        style = MaterialTheme.typography.bodySmall
+                        color = if (isDark) LightGrayDark else Color.Gray
                     )
                 }
             }
 
-            // --- BOUTON SUIVRE
             FollowButton(
                 isFollowing = isFollowing,
                 onClick = { onToggleFollow(user.uid, isFollowing) }
             )
         }
 
-        // 🔥 AFFICHER LE DERNIER TWEET
         if (lastTweet.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = lastTweet,
-                color = Color.Gray,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 56.dp) // aligné avec texte
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = if (isDark) Color.White else Color.Black,
+                modifier = Modifier.padding(start = 56.dp)
             )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-        Divider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.4f))
-    }
-}
-
-//////////////////////////////////////////////
-// 🔧 AVATAR COMPOSABLE
-//////////////////////////////////////////////
-@Composable
-fun Avatar(name: String) {
-    Box(
-        modifier = Modifier
-            .size(45.dp)
-            .background(Color.LightGray.copy(alpha = 0.3f), CircleShape),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = name.firstOrNull()?.uppercase() ?: "?",
-            style = MaterialTheme.typography.titleMedium
+        Spacer(modifier = Modifier.height(10.dp))
+        HorizontalDivider(
+            thickness = 0.6.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
         )
     }
 }
 
-//////////////////////////////////////////////
-// 🔧 FOLLOW BUTTON COMPOSABLE
-//////////////////////////////////////////////
+@Composable
+fun Avatar(username: String) {
+    val isDark = isSystemInDarkTheme()
+
+    Box(
+        modifier = Modifier
+            .size(45.dp)
+            .background(
+                color = if (isDark) Color.DarkGray else Color.LightGray.copy(alpha = 0.3f),
+                shape = CircleShape
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = username.firstOrNull()?.uppercase() ?: "?",
+            color = if (isDark) Color.White else Color.Black
+        )
+    }
+}
+
 @Composable
 fun FollowButton(
     isFollowing: Boolean,
     onClick: () -> Unit
 ) {
+    val bgColor = if (isFollowing) Color.LightGray.copy(alpha = 0.25f) else TwitterBlue
+    val textColor = if (isFollowing) LightText else Color.White
+
     Button(
         onClick = onClick,
         shape = CircleShape,
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (isFollowing)
-                Color.LightGray.copy(alpha = 0.3f)
-            else
-                MaterialTheme.colorScheme.primary
+            containerColor = bgColor,
+            contentColor = textColor
         ),
-        modifier = Modifier.height(36.dp)
+        modifier = Modifier.height(34.dp)
     ) {
         Text(
             text = if (isFollowing) "Abonné(e)" else "Suivre",
-            color = if (isFollowing) Color.Black else Color.White
+            fontWeight = FontWeight.SemiBold
         )
     }
 }

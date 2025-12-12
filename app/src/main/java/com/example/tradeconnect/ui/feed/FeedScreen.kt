@@ -25,7 +25,8 @@ fun FeedScreen(
     isDarkMode: Boolean,
     onToggleTheme: () -> Unit
 ) {
-    // Charger données une seule fois
+
+    // ⭐ Charger données une seule fois
     LaunchedEffect(Unit) {
         viewModel.loadMyTweets()
         viewModel.loadFollowingUsers()
@@ -98,7 +99,7 @@ fun FeedScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // ⭐ Suggestions - ne scroll PAS
+                // ⭐ Onglet "Abonnements" — utilisateurs à suivre
                 if (selectedTab == 1) {
                     UsersToFollowList(
                         users = viewModel.allUsers.value,
@@ -112,20 +113,28 @@ fun FeedScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // ⭐ Tweets — seule zone scrollable
+                // ⭐ La liste des tweets
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f) // 🔥 OBLIGATOIRE POUR QUE LE BURGER RESTE CLIQUABLE
+                        .weight(1f) // important pour garder le burger cliquable
                 ) {
                     items(tweetsToShow) { tweet ->
                         TweetItem(
                             tweet = tweet,
                             isDarkMode = isDarkMode,
                             currentUserId = currentUserId,
+
+                            // ⭐ Correction : onLike reçoit BIEN tweet.id
                             onMoreClick = {
                                 selectedTweetId = tweet.id
                                 showMoreDialog = true
+                            },
+                            onLike = { id ->
+                                viewModel.toggleLike(id)
+                            },
+                            onSave = { id ->
+                                viewModel.toggleSave(id)
                             }
                         )
                         Divider()

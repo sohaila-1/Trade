@@ -8,9 +8,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+
+// Firestore
+import com.google.firebase.firestore.FirebaseFirestore
 
 // Repositories
 import com.example.tradeconnect.repository.TweetRepository
@@ -26,12 +29,10 @@ import com.example.tradeconnect.uii.home.HomeScreen
 import com.example.tradeconnect.uii.login.LoginScreen
 import com.example.tradeconnect.uii.signup.SignUpScreen
 
+
 // ViewModels
 import com.example.tradeconnect.viewmodel.AuthViewModel
 import com.example.tradeconnect.viewmodel.TweetViewModel
-
-// Firebase
-import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun AppNavHost(
@@ -42,15 +43,13 @@ fun AppNavHost(
     // ------------------------------
     // INIT REPOSITORIES
     // ------------------------------
-
     val tweetRepo = TweetRepository(
-        firestore = FirebaseFirestore.getInstance() // ✔️ FIN DU CRASH !
+        firestore = FirebaseFirestore.getInstance()   // ✅ correction
     )
-
     val followRepo = FollowRepository()
     val userRepo = UserRepository()
 
-    // ViewModel Auth déjà injecté
+    // Auth ViewModel déjà fourni
     val authVM = authViewModel
 
     // ------------------------------
@@ -68,7 +67,7 @@ fun AppNavHost(
     var isDarkMode by remember { mutableStateOf(false) }
 
     // ------------------------------
-    // NAVIGATION GRAPH
+    // NAVIGATION
     // ------------------------------
     NavHost(
         navController = navController,
@@ -77,12 +76,12 @@ fun AppNavHost(
 
         // LOGIN
         composable("login") {
-            LoginScreen(navController, authViewModel)
+            LoginScreen(navController, authVM)
         }
 
         // SIGNUP
         composable("signup") {
-            SignUpScreen(navController, authViewModel)
+            SignUpScreen(navController, authVM)
         }
 
         // HOME

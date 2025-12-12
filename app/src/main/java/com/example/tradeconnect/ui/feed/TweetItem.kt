@@ -1,18 +1,18 @@
 package com.example.tradeconnect.ui.feed
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.ModeComment
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,92 +22,122 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tradeconnect.model.Tweet
+import com.example.tradeconnect.ui.components.TwitterBlue
 import com.example.tradeconnect.ui.components.rememberFormattedTime
+import com.example.tradeconnect.ui.theme.DarkGrayText
+import com.example.tradeconnect.ui.theme.DarkText
+import com.example.tradeconnect.ui.theme.LightGrayText
+import com.example.tradeconnect.ui.theme.LightText
 
 @Composable
 fun TweetItem(
     tweet: Tweet,
     isDarkMode: Boolean,
     currentUserId: String,
-    onMoreClick: () -> Unit
+    onMoreClick: () -> Unit,
+    onLike: (String) -> Unit,
+    onSave: (String) -> Unit
 ) {
-    val textColor = if (isDarkMode) Color.White else Color.Black
-    val secondary = if (isDarkMode) Color.LightGray else Color.Gray
+    val bg = if (isDarkMode) Color.Black else Color.White
+    val textColor = if (isDarkMode) DarkText else LightText
+    val secondary = if (isDarkMode) DarkGrayText else LightGrayText
 
     val formattedTime = rememberFormattedTime(tweet.timestamp)
 
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .background(bg)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
 
-        // ---- Avatar ----
-        Box(
-            modifier = Modifier
-                .size(45.dp)
-                .clip(CircleShape)
-                .background(Color(0xFF444444)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = tweet.username.firstOrNull()?.uppercase() ?: "?",
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
-        }
+        Row(modifier = Modifier.fillMaxWidth()) {
 
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-
-            // ---- Username + Time ----
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // --- Avatar ---
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(if (isDarkMode) Color(0xFF2F3336) else Color(0xFFD9D9D9)),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
-                    text = tweet.username,
+                    text = tweet.username.firstOrNull()?.uppercase() ?: "?",
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        tweet.username,
+                        color = textColor,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        formattedTime,
+                        color = secondary,
+                        fontSize = 12.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    tweet.content,
                     color = textColor,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 15.sp,
+                    lineHeight = 20.sp
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = formattedTime,
-                    color = secondary,
-                    fontSize = 12.sp
-                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(22.dp)
+                ) {
+                    // LIKE ❤️
+                    IconButton(onClick = { onLike(tweet.id) }) {
+                        Icon(
+                            imageVector = if (tweet.likes.contains(currentUserId))
+                                Icons.Filled.Favorite
+                            else
+                                Icons.Filled.FavoriteBorder,
+                            contentDescription = "Like",
+                            tint = if (tweet.likes.contains(currentUserId)) Color.Red else textColor
+                        )
+                    }
+
+                    // SAVE 🔖
+                    IconButton(onClick = { onSave(tweet.id) }) {
+                        Icon(
+                            imageVector = if (tweet.saves.contains(currentUserId))
+                                Icons.Filled.Bookmark
+                            else
+                                Icons.Filled.BookmarkBorder,
+                            contentDescription = "Save",
+                            tint = if (tweet.saves.contains(currentUserId)) TwitterBlue else textColor
+                        )
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = tweet.content,
-                color = textColor,
-                fontSize = 15.sp
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // ---- Icons ----
-            Row {
-                Icon(Icons.Filled.FavoriteBorder, contentDescription = null, tint = textColor)
-                Spacer(modifier = Modifier.width(20.dp))
-
-                Icon(Icons.Filled.ModeComment, contentDescription = null, tint = textColor)
-                Spacer(modifier = Modifier.width(20.dp))
-
-                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, tint = textColor)
+            if (tweet.userId == currentUserId) {
+                IconButton(onClick = onMoreClick) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = "More", tint = secondary)
+                }
             }
         }
 
-        // ⭐ MENU visible seulement pour l'auteur du tweet
-        if (tweet.userId == currentUserId) {
-            IconButton(onClick = onMoreClick) {
-                Icon(
-                    imageVector = Icons.Filled.MoreVert,
-                    contentDescription = "More options",
-                    tint = textColor
-                )
-            }
-        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Divider(color = secondary.copy(alpha = 0.2f), thickness = 0.5.dp)
     }
 }
