@@ -38,7 +38,7 @@ fun HomeScreen(navController: NavController, viewModel: AuthViewModel) {
         Spacer(modifier = Modifier.height(12.dp))
 
         Button(
-            onClick = { navController.navigate("chat") },
+            onClick = { navController.navigate("chat_list") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(55.dp),
