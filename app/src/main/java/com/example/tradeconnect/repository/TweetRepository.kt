@@ -37,4 +37,18 @@ class TweetRepository(private val firestore: FirebaseFirestore) {
     fun deleteTweet(id: String, onSuccess: () -> Unit) {
         tweetsRef.document(id).delete().addOnSuccessListener { onSuccess() }
     }
+
+
+    fun getAllTweets(onResult: (List<Tweet>) -> Unit) {
+        tweetsRef
+            .get()
+            .addOnSuccessListener { snap ->
+                val list = snap.documents.mapNotNull { it.toObject(Tweet::class.java) }
+                onResult(list)
+            }
+            .addOnFailureListener {
+                onResult(emptyList())
+            }
+    }
+
 }

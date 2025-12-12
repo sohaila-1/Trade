@@ -10,39 +10,38 @@ class FollowRepository {
     private val followRef = db.collection("follows")
 
     // ----------------------------------------------
-    // 🔥 Récupérer la liste des UID suivis par currentUid
+    // 🔥 Récupérer les UID suivis par l'utilisateur
     // ----------------------------------------------
     fun getFollowing(currentUid: String, onResult: (List<String>) -> Unit) {
-        followRef
-            .document(currentUid)
+        followRef.document(currentUid)
             .get()
             .addOnSuccessListener { doc ->
                 val list = doc.get("following") as? List<String> ?: emptyList()
                 onResult(list)
             }
-            .addOnFailureListener { onResult(emptyList()) }
+            .addOnFailureListener {
+                onResult(emptyList())
+            }
     }
 
     // ----------------------------------------------
-    // 🔥 FOLLOW (suspend)
+    // 🔥 FOLLOW (corrigé)
     // ----------------------------------------------
-    suspend fun followUser(currentUid: String, targetUid: String) {
+    fun followUser(currentUid: String, targetUid: String) {
         followRef.document(currentUid)
             .update("following", FieldValue.arrayUnion(targetUid))
             .addOnFailureListener {
-                // document doesn't exist → create it
+                // document n'existe pas → on le crée
                 followRef.document(currentUid)
                     .set(mapOf("following" to listOf(targetUid)))
             }
-            .await()
     }
 
     // ----------------------------------------------
-    // 🔥 UNFOLLOW (suspend)
+    // 🔥 UNFOLLOW
     // ----------------------------------------------
-    suspend fun unfollowUser(currentUid: String, targetUid: String) {
+    fun unfollowUser(currentUid: String, targetUid: String) {
         followRef.document(currentUid)
             .update("following", FieldValue.arrayRemove(targetUid))
-            .await()
     }
 }

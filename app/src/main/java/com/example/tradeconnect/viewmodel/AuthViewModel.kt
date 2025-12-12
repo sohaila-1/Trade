@@ -137,8 +137,9 @@ class AuthViewModel(
     // UTILITY → obtenir UID utilisateur Firebase
     // -------------------------
     fun getCurrentUserId(): String? {
-        return auth.currentUser?.uid
+        return currentUser.value?.uid
     }
+
 
 
     // -------------------------
@@ -153,4 +154,9 @@ class AuthViewModel(
             return AuthViewModel(repo, prefs) as T
         }
     }
+
+    fun clearError() {
+        errorMessage = null
+    }
+
 }

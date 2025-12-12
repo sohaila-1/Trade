@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.tradeconnect.ui.components.UserFollowItem
 import com.example.tradeconnect.ui.feed.components.BottomNavBar
 import com.example.tradeconnect.viewmodel.TweetViewModel
 import com.example.tradeconnect.ui.feed.components.SidebarMenu
@@ -26,11 +25,12 @@ fun FeedScreen(
     isDarkMode: Boolean,
     onToggleTheme: () -> Unit
 ) {
-    // Charger les données
+    // Charger données une seule fois
     LaunchedEffect(Unit) {
         viewModel.loadMyTweets()
         viewModel.loadFollowingUsers()
         viewModel.loadAllUsers()
+        viewModel.loadAllTweets()
     }
 
     var selectedTab by remember { mutableStateOf(0) }
@@ -38,6 +38,8 @@ fun FeedScreen(
     val myTweets = viewModel.myTweets.value
     val followingTweets = viewModel.followingTweets.value
     val tweetsToShow = if (selectedTab == 0) myTweets else followingTweets
+
+    val currentUserId = viewModel.authVM.getCurrentUserId() ?: ""
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -84,7 +86,7 @@ fun FeedScreen(
                     .padding(horizontal = 12.dp)
             ) {
 
-                // Header : Tabs + Menu
+                // ⭐ Header + Tabs
                 TabsHeader(
                     isDarkMode = isDarkMode,
                     textColor = textColor,
@@ -96,46 +98,31 @@ fun FeedScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // ⭐ FIX CRASH : LazyColumn doit avoir weight(1f)
+                // ⭐ Suggestions - ne scroll PAS
+                if (selectedTab == 1) {
+                    UsersToFollowList(
+                        users = viewModel.allUsers.value,
+                        followingIds = viewModel.followingList.value,
+                        getLastTweet = { uid -> viewModel.getLastTweetOfUser(uid) },
+                        onToggleFollow = { uid, isFollowing ->
+                            if (isFollowing) viewModel.unfollowUser(uid)
+                            else viewModel.followUser(uid)
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // ⭐ Tweets — seule zone scrollable
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)   // OBLIGATOIRE !!!!!
+                        .weight(1f) // 🔥 OBLIGATOIRE POUR QUE LE BURGER RESTE CLIQUABLE
                 ) {
-
-                    if (selectedTab == 1) {
-
-                        // Titre section
-                        item {
-                            Text(
-                                text = "Suggestions",
-                                color = textColor,
-                                modifier = Modifier.padding(12.dp),
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                        }
-
-                        // Liste utilisateurs → chaque user = item séparé
-                        items(viewModel.allUsers.value) { user ->
-                            UserFollowItem(
-                                user = user,
-                                isFollowing = viewModel.followingList.value.contains(user.uid),
-                                onToggleFollow = { uid, isFollowing ->
-                                    if (isFollowing) viewModel.unfollowUser(uid)
-                                    else viewModel.followUser(uid)
-                                }
-                            )
-                        }
-
-                        item { Spacer(modifier = Modifier.height(12.dp)) }
-                    }
-
-
-                    // Tweets
                     items(tweetsToShow) { tweet ->
                         TweetItem(
                             tweet = tweet,
                             isDarkMode = isDarkMode,
+                            currentUserId = currentUserId,
                             onMoreClick = {
                                 selectedTweetId = tweet.id
                                 showMoreDialog = true
@@ -148,13 +135,14 @@ fun FeedScreen(
         }
     }
 
-    // ---- BOTTOM SHEET ----
+    // ⭐ Bottom Sheet (Modifier / Supprimer)
     if (showMoreDialog && selectedTweetId != null) {
         ModalBottomSheet(
             onDismissRequest = { showMoreDialog = false },
             containerColor = bgColor,
             sheetState = sheetState
         ) {
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -162,7 +150,7 @@ fun FeedScreen(
             ) {
 
                 Text(
-                    text = "Modifier",
+                    "Modifier",
                     color = textColor,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -174,7 +162,7 @@ fun FeedScreen(
                 )
 
                 Text(
-                    text = "Supprimer",
+                    "Supprimer",
                     color = Color.Red,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -188,7 +176,7 @@ fun FeedScreen(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "Annuler",
+                    "Annuler",
                     color = Color.Gray,
                     modifier = Modifier
                         .fillMaxWidth()

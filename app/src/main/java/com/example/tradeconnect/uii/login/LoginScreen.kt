@@ -150,9 +150,7 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
     }
 }
 
-private fun AuthViewModel.clearError() {
-    TODO("Not yet implemented")
-}
+
 
 @Preview(showBackground = true)
 @Composable

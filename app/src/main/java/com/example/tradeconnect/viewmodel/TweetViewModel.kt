@@ -10,27 +10,25 @@ import com.example.tradeconnect.repository.FollowRepository
 import com.example.tradeconnect.repository.TweetRepository
 import com.example.tradeconnect.repository.UserRepository
 import kotlinx.coroutines.launch
-
 import java.util.UUID
 
 class TweetViewModel(
     private val tweetRepo: TweetRepository,
     private val followRepo: FollowRepository,
-    private val authVM: AuthViewModel,
+    val authVM: AuthViewModel,
     private val userRepo: UserRepository
 ) : ViewModel() {
 
-    // ----------------------------------------------
-    // 🌟 STATES
-    // ----------------------------------------------
     val myTweets = mutableStateOf<List<Tweet>>(emptyList())
     val followingList = mutableStateOf<List<String>>(emptyList())
     val followingTweets = mutableStateOf<List<Tweet>>(emptyList())
+
+    val allTweets = mutableStateOf<List<Tweet>>(emptyList())
     val allUsers = mutableStateOf<List<User>>(emptyList())
 
-    // ----------------------------------------------
+    // -----------------------------------------------------
     // 🔥 CHARGER MES TWEETS
-    // ----------------------------------------------
+    // -----------------------------------------------------
     fun loadMyTweets() {
         val user = authVM.currentUser.value ?: return
         tweetRepo.getTweetsByUser(user.uid) { list ->
@@ -38,18 +36,30 @@ class TweetViewModel(
         }
     }
 
-    // ----------------------------------------------
+    // -----------------------------------------------------
+    // 🔥 CHARGER TOUS LES TWEETS
+    // -----------------------------------------------------
+    fun loadAllTweets() {
+        tweetRepo.getAllTweets { list ->
+            allTweets.value = list
+        }
+    }
+
+    // -----------------------------------------------------
     // 🔥 CHARGER LES PERSONNES QUE JE SUIS
-    // ----------------------------------------------
+    // -----------------------------------------------------
     fun loadFollowingUsers() {
         val user = authVM.currentUser.value ?: return
 
         followRepo.getFollowing(user.uid) { list ->
             followingList.value = list
-            loadFollowingTweets(list)
+            loadFollowingTweets(list)   // 👈 correct
         }
     }
 
+    // -----------------------------------------------------
+    // 🔥 VERSION UNIQUE ET CORRECTE loadFollowingTweets
+    // -----------------------------------------------------
     private fun loadFollowingTweets(ids: List<String>) {
         if (ids.isEmpty()) {
             followingTweets.value = emptyList()
@@ -57,13 +67,22 @@ class TweetViewModel(
         }
 
         tweetRepo.getTweetsFromUsers(ids) { tweets ->
-            followingTweets.value = tweets
+
+            // ⭐ On prend SEULEMENT le dernier tweet de chaque utilisateur suivi
+            val lastTweets = tweets
+                .groupBy { it.userId }
+                .map { (_, userTweets) ->
+                    userTweets.maxByOrNull { it.timestamp }!!
+                }
+                .sortedByDescending { it.timestamp }
+
+            followingTweets.value = lastTweets
         }
     }
 
-    // ----------------------------------------------
+    // -----------------------------------------------------
     // 🔥 CRÉER UN TWEET
-    // ----------------------------------------------
+    // -----------------------------------------------------
     fun createTweet(content: String) {
         val user = authVM.currentUser.value ?: return
 
@@ -77,49 +96,54 @@ class TweetViewModel(
 
         tweetRepo.postTweet(tweet) {
             loadMyTweets()
+            loadAllTweets()
         }
     }
 
-    // ----------------------------------------------
-    // 🔥 ÉDITER & SUPPRIMER
-    // ----------------------------------------------
+    // -----------------------------------------------------
+    // 🔥 ÉDITER / SUPPRIMER
+    // -----------------------------------------------------
     fun editTweet(id: String, newContent: String) {
         tweetRepo.updateTweet(id, newContent) {
             loadMyTweets()
+            loadAllTweets()
         }
     }
 
     fun deleteTweet(id: String) {
         tweetRepo.deleteTweet(id) {
             loadMyTweets()
+            loadAllTweets()
         }
     }
 
     fun getTweetById(id: String): Tweet? =
         myTweets.value.firstOrNull { it.id == id }
 
-    // ----------------------------------------------
-    // 🔥 RÉCUPÉRER TOUS LES USERS (onglet abonnements)
-    // ----------------------------------------------
+    // -----------------------------------------------------
+    // 🔥 CHARGER TOUS LES USERS (onglet abonnements)
+    // -----------------------------------------------------
     fun loadAllUsers() {
-        userRepo.getAllUsers { list ->
-            allUsers.value = list
+        val currentUid = authVM.getCurrentUserId() ?: return
+
+        userRepo.getAllUsers { users ->
+            allUsers.value = users.filter { it.uid != currentUid }
         }
     }
 
-    // ----------------------------------------------
+    // -----------------------------------------------------
     // 🔥 FOLLOW / UNFOLLOW
-    // ----------------------------------------------
-
+    // -----------------------------------------------------
     fun followUser(targetUid: String) {
         val currentUid = authVM.getCurrentUserId() ?: return
 
         viewModelScope.launch {
             followRepo.followUser(currentUid, targetUid)
             loadFollowingUsers()
+            loadAllUsers()
+            loadAllTweets()
         }
     }
-
 
     fun unfollowUser(targetUid: String) {
         val currentUid = authVM.getCurrentUserId() ?: return
@@ -127,24 +151,27 @@ class TweetViewModel(
         viewModelScope.launch {
             followRepo.unfollowUser(currentUid, targetUid)
             loadFollowingUsers()
+            loadAllUsers()
+            loadAllTweets()
         }
     }
 
+    // -----------------------------------------------------
+    // 🔥 UTILITAIRE : DERNIER TWEET D’UN USER
+    // -----------------------------------------------------
+    fun getLastTweetOfUser(userId: String): String =
+        allTweets.value
+            .filter { it.userId == userId }
+            .maxByOrNull { it.timestamp }
+            ?.content ?: ""
 
-
-
-
-
-    // ----------------------------------------------
-    // 🔥 FACTORY POUR NAVHOST
-    // ----------------------------------------------
+    // -----------------------------------------------------
     class Factory(
         private val tweetRepo: TweetRepository,
         private val followRepo: FollowRepository,
         private val authVM: AuthViewModel,
         private val userRepo: UserRepository
     ) : ViewModelProvider.Factory {
-
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return TweetViewModel(tweetRepo, followRepo, authVM, userRepo) as T
         }
