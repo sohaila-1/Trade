@@ -197,14 +197,14 @@ fun ChatScreen(
                                 style = MaterialTheme.typography.titleMedium
                             )
                             // Show online status or connection status
-                            Text(
-                                text = if (isOnline) "Online" else "Offline",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (isOnline)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+//                            Text(
+//                                text = if (isOnline) "Online" else "Offline",
+//                                style = MaterialTheme.typography.bodySmall,
+//                                color = if (isOnline)
+//                                    MaterialTheme.colorScheme.primary
+//                                else
+//                                    MaterialTheme.colorScheme.onSurfaceVariant
+//                            )
                         }
                     }
                 },
