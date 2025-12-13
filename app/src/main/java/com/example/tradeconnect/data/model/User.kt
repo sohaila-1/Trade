@@ -6,4 +6,7 @@ data class User(
     val email: String = "",
     val profileImageUrl: String = "",
     val mobile: String = "",
+
+    val isOnline: Boolean = false,
+    val lastSeen: Long = System.currentTimeMillis()
 )
