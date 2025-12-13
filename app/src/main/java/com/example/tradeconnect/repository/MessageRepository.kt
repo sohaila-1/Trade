@@ -8,14 +8,15 @@ import com.example.tradeconnect.data.model.ChatPreview
 import com.example.tradeconnect.data.model.Message
 import com.example.tradeconnect.data.model.MessageStatus
 import com.example.tradeconnect.data.model.User
-import com.example.tradeconnect.data.remote.FirebaseMessagingService
+import com.example.tradeconnect.data.remote.ChatFirebaseService
 import kotlinx.coroutines.flow.*
 import java.util.UUID
 
 class MessageRepository(
     private val database: AppDatabase,
-    private val firebaseService: FirebaseMessagingService
-) {
+    private val firebaseService: ChatFirebaseService
+)
+{
 
     private val messageDao = database.messageDao()
     private val userDao = database.userDao()
@@ -54,7 +55,14 @@ class MessageRepository(
                 // Create chat previews
                 val previews = chatMap.map { (partnerId, lastMessage) ->
                     // Get user info (will fetch from Firebase if not cached)
-                    val user = getUserById(partnerId) ?: User(uid = partnerId, username = "Unknown")
+                    val user = getUserById(userId = partnerId) ?: User(
+                        uid = partnerId,
+                        username = "Unknown",
+                        email = "",
+                        mobile = "",
+                        profileImageUrl = ""
+                    )
+
 
                     // Count unread messages - FIXED: pass ownerUserId
                     val unreadCount = messageDao.getUnreadCount(partnerId, currentUserId)

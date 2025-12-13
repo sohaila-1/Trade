@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.tradeconnect.data.model.ChatPreview
+import com.example.tradeconnect.ui.feed.components.BottomNavBar
 import com.example.tradeconnect.util.Base64ProfileImage
 import com.example.tradeconnect.util.DefaultAvatar
 import com.example.tradeconnect.viewmodel.ChatListViewModel
@@ -47,7 +48,6 @@ fun ChatListScreen(
                     }
                 },
                 actions = {
-                    // Refresh button
                     IconButton(
                         onClick = { viewModel.refresh() },
                         enabled = !isSyncing
@@ -58,20 +58,25 @@ fun ChatListScreen(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Icon(Icons.Default.Refresh, "Refresh")
+                            Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                         }
                     }
 
                     IconButton(onClick = { navController.navigate("user_search") }) {
-                        Icon(Icons.Default.Search, "Search users")
+                        Icon(Icons.Default.Search, contentDescription = "Search users")
                     }
                 }
             )
+        },
+        bottomBar = {
+            BottomNavBar(
+                navController = navController,
+            )
         }
     ) { padding ->
+
         when {
             isLoading && chats.isEmpty() -> {
-                // Initial loading state
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -93,7 +98,6 @@ fun ChatListScreen(
             }
 
             chats.isEmpty() && !isLoading -> {
-                // Empty state
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -119,7 +123,6 @@ fun ChatListScreen(
             }
 
             else -> {
-                // Chat list
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -129,7 +132,9 @@ fun ChatListScreen(
                         ChatPreviewItem(
                             chat = chat,
                             onClick = {
-                                navController.navigate("chat/${chat.user.uid}/${chat.user.username}")
+                                navController.navigate(
+                                    "chat/${chat.user.uid}/${chat.user.username}"
+                                )
                             }
                         )
                         HorizontalDivider()
@@ -152,7 +157,6 @@ fun ChatPreviewItem(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Profile image with unread badge
         Box {
             if (chat.user.profileImageUrl.isNotEmpty()) {
                 if (chat.user.profileImageUrl.startsWith("data:image")) {
@@ -179,7 +183,6 @@ fun ChatPreviewItem(
                 )
             }
 
-            // Unread badge
             if (chat.unreadCount > 0) {
                 Surface(
                     modifier = Modifier
@@ -200,7 +203,6 @@ fun ChatPreviewItem(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Chat info
         Column(modifier = Modifier.weight(1f)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -227,12 +229,10 @@ fun ChatPreviewItem(
             Text(
                 text = chat.lastMessage.ifEmpty { "No messages yet" },
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (chat.unreadCount > 0) {
+                color = if (chat.unreadCount > 0)
                     MaterialTheme.colorScheme.onSurface
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-                fontWeight = if (chat.unreadCount > 0) FontWeight.Medium else FontWeight.Normal,
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -245,11 +245,14 @@ private fun formatChatTime(timestamp: Long): String {
     val diff = now - timestamp
 
     return when {
-        diff < 60_000 -> "Now" // Less than 1 minute
-        diff < 3600_000 -> "${diff / 60_000}m" // Less than 1 hour
-        diff < 86400_000 -> SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(timestamp)) // Today
-        diff < 172800_000 -> "Yesterday" // Yesterday
-        diff < 604800_000 -> SimpleDateFormat("EEE", Locale.getDefault()).format(Date(timestamp)) // This week
-        else -> SimpleDateFormat("dd/MM", Locale.getDefault()).format(Date(timestamp)) // Older
+        diff < 60_000 -> "Now"
+        diff < 3_600_000 -> "${diff / 60_000}m"
+        diff < 86_400_000 ->
+            SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(timestamp))
+        diff < 172_800_000 -> "Yesterday"
+        diff < 604_800_000 ->
+            SimpleDateFormat("EEE", Locale.getDefault()).format(Date(timestamp))
+        else ->
+            SimpleDateFormat("dd/MM", Locale.getDefault()).format(Date(timestamp))
     }
 }

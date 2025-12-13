@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
-class FirebaseMessagingService(
+class ChatFirebaseService(
     private val database: FirebaseDatabase,
     private val auth: FirebaseAuth
 ) {

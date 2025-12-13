@@ -1,15 +1,19 @@
 package com.example.tradeconnect.viewmodel
 
+import IAuthRepository
+import android.util.Patterns
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.tradeconnect.data.datastore.IUserPreferences
+import com.example.tradeconnect.data.repository.MessageRepository
+import com.example.tradeconnect.model.AppUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.*
-import com.example.tradeconnect.data.datastore.IUserPreferences
-import com.example.tradeconnect.data.repository.IAuthRepository
-import com.example.tradeconnect.data.repository.MessageRepository
 
 class AuthViewModel(
     private val repo: IAuthRepository,
@@ -17,135 +21,67 @@ class AuthViewModel(
     private val messageRepository: MessageRepository? = null
 ) : ViewModel() {
 
-    // form fields
+    /* -------------------------
+       FORM FIELDS
+     ------------------------- */
     var email by mutableStateOf("")
     var password by mutableStateOf("")
     var firstName by mutableStateOf("")
     var lastName by mutableStateOf("")
     var phone by mutableStateOf("")
-
-    // UI state
     var errorMessage by mutableStateOf<String?>(null)
     var isLoading by mutableStateOf(false)
 
-    // remember-me flag (UI state)
+    /* -------------------------
+       REMEMBER ME
+     ------------------------- */
     var rememberMe by mutableStateOf(true)
         private set
 
+    fun updateRememberMe(value: Boolean) {
+        rememberMe = value
+        viewModelScope.launch { prefs.setRememberMe(value) }
+    }
+
+    /* -------------------------
+       AUTH STATE
+     ------------------------- */
     private val _isLoggedIn = MutableStateFlow<Boolean?>(null)
     val isLoggedIn = _isLoggedIn
 
+    var currentUser = mutableStateOf<AppUser?>(null)
+        private set
+
+    /* -------------------------
+       INIT
+     ------------------------- */
     init {
         viewModelScope.launch {
-            prefs.rememberMeFlow.collectLatest { stored ->
-                val current = repo.getCurrentUser()
-                _isLoggedIn.value = stored && current != null
+            prefs.rememberMeFlow.collectLatest { shouldRemember ->
+                val user = repo.getCurrentUserModel()
+                if (shouldRemember && user != null) {
+                    currentUser.value = user
+                    _isLoggedIn.value = true
+                } else {
+                    _isLoggedIn.value = false
+                }
             }
         }
     }
 
-    fun updateRememberMe(value: Boolean) {
-        rememberMe = value
-        viewModelScope.launch {
-            prefs.setRememberMe(value)
-        }
-    }
+    /* -------------------------
+       LOGIN
+     ------------------------- */
+    fun login(
+        email: String,
+        password: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        this.email = email
+        this.password = password
 
-    /**
-     * Clear any previous error message
-     */
-    fun clearError() {
-        errorMessage = null
-    }
-
-    /**
-     * Validate login fields
-     */
-    private fun validateLoginFields(): Boolean {
-        // Clear previous error
-        errorMessage = null
-
-        // Check email
-        if (email.isBlank()) {
-            errorMessage = "Please enter your email"
-            return false
-        }
-
-        if (!isValidEmail(email)) {
-            errorMessage = "Please enter a valid email address"
-            return false
-        }
-
-        // Check password
-        if (password.isBlank()) {
-            errorMessage = "Please enter your password"
-            return false
-        }
-
-        return true
-    }
-
-    /**
-     * Validate signup fields
-     */
-    private fun validateSignUpFields(): Boolean {
-        // Clear previous error
-        errorMessage = null
-
-        // Check first name
-        if (firstName.isBlank()) {
-            errorMessage = "Please enter your first name"
-            return false
-        }
-
-        // Check last name
-        if (lastName.isBlank()) {
-            errorMessage = "Please enter your last name"
-            return false
-        }
-
-        // Check email
-        if (email.isBlank()) {
-            errorMessage = "Please enter your email"
-            return false
-        }
-
-        if (!isValidEmail(email)) {
-            errorMessage = "Please enter a valid email address"
-            return false
-        }
-
-        // Check phone (optional but if provided, validate format)
-        // You can make this required by uncommenting:
-        // if (phone.isBlank()) {
-        //     errorMessage = "Please enter your phone number"
-        //     return false
-        // }
-
-        // Check password
-        if (password.isBlank()) {
-            errorMessage = "Please enter a password"
-            return false
-        }
-
-        if (password.length < 6) {
-            errorMessage = "Password must be at least 6 characters"
-            return false
-        }
-
-        return true
-    }
-
-    /**
-     * Simple email validation
-     */
-    private fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    }
-
-    fun login(onSuccess: () -> Unit) {
-        // Validate before attempting login
         if (!validateLoginFields()) {
+            onResult(false, errorMessage)
             return
         }
 
@@ -154,24 +90,30 @@ class AuthViewModel(
 
         repo.login(email.trim(), password) { success, error ->
             isLoading = false
-            if (success) {
-                viewModelScope.launch {
-                    prefs.setRememberMe(rememberMe)
-                    _isLoggedIn.value = true
-                    onSuccess()
-                }
-            } else {
-                // Map Firebase errors to user-friendly messages
+
+            if (!success) {
                 errorMessage = mapFirebaseError(error)
+                onResult(false, errorMessage)
+                return@login
             }
+
+            currentUser.value = repo.getCurrentUserModel()
+            _isLoggedIn.value = true
+
+            viewModelScope.launch {
+                prefs.setRememberMe(rememberMe)
+            }
+
+            onResult(true, null)
         }
     }
 
+
+    /* -------------------------
+       SIGN UP
+     ------------------------- */
     fun signUp(onSuccess: () -> Unit) {
-        // Validate before attempting signup
-        if (!validateSignUpFields()) {
-            return
-        }
+        if (!validateSignUpFields()) return
 
         isLoading = true
         errorMessage = null
@@ -184,63 +126,28 @@ class AuthViewModel(
             phone.trim()
         ) { success, error ->
             isLoading = false
-            if (success) {
-                viewModelScope.launch {
-                    if (!rememberMe) {
-                        rememberMe = true
-                        prefs.setRememberMe(true)
-                    } else {
-                        prefs.setRememberMe(rememberMe)
-                    }
-                    _isLoggedIn.value = true
-                    onSuccess()
-                }
-            } else {
-                // Map Firebase errors to user-friendly messages
+
+            if (!success) {
                 errorMessage = mapFirebaseError(error)
+                return@signUp
             }
+
+            currentUser.value = repo.getCurrentUserModel()
+            _isLoggedIn.value = true
+
+            viewModelScope.launch { prefs.setRememberMe(rememberMe) }
+            onSuccess()
         }
     }
 
-    /**
-     * Map Firebase error messages to user-friendly messages
-     */
-    private fun mapFirebaseError(error: String?): String {
-        return when {
-            error == null -> "An unknown error occurred"
-            error.contains("email address is badly formatted", ignoreCase = true) ->
-                "Please enter a valid email address"
-            error.contains("password is invalid", ignoreCase = true) ||
-                    error.contains("wrong password", ignoreCase = true) ->
-                "Incorrect password"
-            error.contains("no user record", ignoreCase = true) ||
-                    error.contains("user not found", ignoreCase = true) ->
-                "No account found with this email"
-            error.contains("email address is already in use", ignoreCase = true) ->
-                "An account with this email already exists"
-            error.contains("weak password", ignoreCase = true) ->
-                "Password is too weak. Use at least 6 characters"
-            error.contains("network error", ignoreCase = true) ||
-                    error.contains("network", ignoreCase = true) ->
-                "Network error. Please check your connection"
-            error.contains("too many requests", ignoreCase = true) ||
-                    error.contains("blocked", ignoreCase = true) ->
-                "Too many attempts. Please try again later"
-            error.contains("empty or null", ignoreCase = true) ->
-                "Please fill in all required fields"
-            else -> error
-        }
-    }
-
+    /* -------------------------
+       LOGOUT
+     ------------------------- */
     fun logout(onComplete: (() -> Unit)? = null) {
         viewModelScope.launch {
-            // Clear all local cached data
             messageRepository?.clearAllData()
-
-            // Sign out from Firebase
             repo.logout()
 
-            // Clear form fields for security
             email = ""
             password = ""
             firstName = ""
@@ -248,19 +155,68 @@ class AuthViewModel(
             phone = ""
             errorMessage = null
 
-            // Update login state
+            currentUser.value = null
             _isLoggedIn.value = false
+            prefs.setRememberMe(false)
 
             onComplete?.invoke()
         }
     }
 
+    /* -------------------------
+       VALIDATION
+     ------------------------- */
+    private fun validateLoginFields(): Boolean {
+        errorMessage = null
+        if (email.isBlank()) return setError("Please enter your email")
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches())
+            return setError("Please enter a valid email")
+        if (password.isBlank()) return setError("Please enter your password")
+        return true
+    }
+
+    private fun validateSignUpFields(): Boolean {
+        errorMessage = null
+        if (firstName.isBlank()) return setError("Please enter your first name")
+        if (lastName.isBlank()) return setError("Please enter your last name")
+        if (email.isBlank()) return setError("Please enter your email")
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches())
+            return setError("Please enter a valid email")
+        if (password.length < 6)
+            return setError("Password must be at least 6 characters")
+        return true
+    }
+
+    private fun setError(msg: String): Boolean {
+        errorMessage = msg
+        return false
+    }
+
+    fun clearError() {
+        errorMessage = null
+    }
+
+    private fun mapFirebaseError(error: String?): String {
+        return when {
+            error == null -> "An unknown error occurred"
+            error.contains("email", true) -> "Invalid email"
+            error.contains("password", true) -> "Invalid password"
+            error.contains("network", true) -> "Network error"
+            error.contains("already", true) -> "Account already exists"
+            else -> error
+        }
+    }
+
+    fun getCurrentUserId(): String? = currentUser.value?.uid
+
+    /* -------------------------
+       FACTORY
+     ------------------------- */
     class Factory(
         private val repo: IAuthRepository,
         private val prefs: IUserPreferences,
         private val messageRepository: MessageRepository? = null
     ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return AuthViewModel(repo, prefs, messageRepository) as T
         }

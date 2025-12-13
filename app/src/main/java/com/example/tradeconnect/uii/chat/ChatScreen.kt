@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -27,6 +26,7 @@ import com.example.tradeconnect.data.model.Message
 import com.example.tradeconnect.data.model.MessageStatus
 import com.example.tradeconnect.data.model.User
 import com.example.tradeconnect.data.repository.MessageRepository
+import com.example.tradeconnect.ui.feed.components.BottomNavBar
 import com.example.tradeconnect.util.Base64ProfileImage
 import com.example.tradeconnect.util.DefaultAvatar
 import com.example.tradeconnect.util.NetworkObserver
@@ -39,10 +39,12 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
+
     navController: NavController,
     partnerId: String,
     messageRepository: MessageRepository,
-    networkObserver: NetworkObserver
+    networkObserver: NetworkObserver,
+    username: String
 ) {
     val scope = rememberCoroutineScope()
 
@@ -216,28 +218,22 @@ fun ChatScreen(
             )
         },
         bottomBar = {
-            MessageInputBar(
-                messageText = messageText,
-                onMessageChange = { messageText = it },
-                onSendClick = {
-                    val text = messageText.trim()
-                    if (text.isNotEmpty()) {
-                        messageText = ""
-                        scope.launch {
-                            try {
-                                Log.d("ChatScreen", "Sending message (online: $isOnline)")
-                                messageRepository.sendMessage(partnerId, text, isOnline)
-                            } catch (e: CancellationException) {
-                                throw e
-                            } catch (e: Exception) {
-                                Log.e("ChatScreen", "Error sending message", e)
-                            }
-                        }
-                    }
-                },
-                enabled = messageText.isNotBlank()
-            )
+            Column {
+                MessageInputBar(
+                    messageText = messageText,
+                    onMessageChange = { messageText = it },
+                    onSendClick = { /* send */ },
+                    enabled = messageText.isNotBlank()
+                )
+
+                Divider()
+
+                BottomNavBar(
+                    navController = navController,
+                )
+            }
         }
+
     ) { padding ->
         Box(
             modifier = Modifier
