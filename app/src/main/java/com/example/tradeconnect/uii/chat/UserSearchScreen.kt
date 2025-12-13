@@ -1,16 +1,11 @@
 package com.example.tradeconnect.ui.chat
 
-// Android imports
-import android.graphics.BitmapFactory
-import android.util.Base64
-
-// Compose imports
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
@@ -19,32 +14,30 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-
-// Navigation
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-
-// Coil for image loading
 import coil.compose.AsyncImage
-
-// Your models
 import com.example.tradeconnect.data.model.User
-
-// Utils
+import com.example.tradeconnect.ui.theme.TBlue
 import com.example.tradeconnect.util.Base64ProfileImage
 import com.example.tradeconnect.util.DefaultAvatar
 import com.example.tradeconnect.viewmodel.UserSearchViewModel
+import com.example.tradeconnect.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserSearchScreen(
     navController: NavController,
-    viewModel: UserSearchViewModel
+    viewModel: UserSearchViewModel,
+    userViewModel: UserViewModel? = null // Optionnel pour le follow
 ) {
     val searchResults by viewModel.searchResults.collectAsState()
+    val followingStatus by userViewModel?.followingStatus?.collectAsState() ?: remember { mutableStateOf(emptyMap()) }
+    val followLoadingUserId = userViewModel?.isFollowLoading
 
     Scaffold(
         topBar = {
@@ -94,11 +87,20 @@ fun UserSearchScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(searchResults) { user ->
-                    UserItem(
+                    UserItemWithFollow(
                         user = user,
-                        onClick = {
+                        isFollowing = followingStatus[user.uid] ?: false,
+                        isLoading = followLoadingUserId == user.uid,
+                        onUserClick = {
                             navController.navigate("chat/${user.uid}/${user.username}")
-                        }
+                        },
+                        onProfileClick = {
+                            navController.navigate("other_profile/${user.uid}")
+                        },
+                        onFollowClick = {
+                            userViewModel?.toggleFollow(user.uid)
+                        },
+                        showFollowButton = userViewModel != null
                     )
                 }
 
@@ -125,50 +127,62 @@ fun UserSearchScreen(
 }
 
 @Composable
-fun UserItem(
+fun UserItemWithFollow(
     user: User,
-    onClick: () -> Unit
+    isFollowing: Boolean,
+    isLoading: Boolean,
+    onUserClick: () -> Unit,
+    onProfileClick: () -> Unit,
+    onFollowClick: () -> Unit,
+    showFollowButton: Boolean = true
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = onUserClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Profile image - handles both base64 and URL
-        if (user.profileImageUrl.isNotEmpty()) {
-            if (user.profileImageUrl.startsWith("data:image")) {
-                // Handle base64 image
-                Base64ProfileImage(
-                    base64String = user.profileImageUrl,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                )
+        // Profile image - clickable pour voir le profil
+        Box(
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable(onClick = onProfileClick)
+        ) {
+            if (user.profileImageUrl.isNotEmpty()) {
+                if (user.profileImageUrl.startsWith("data:image")) {
+                    Base64ProfileImage(
+                        base64String = user.profileImageUrl,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
+                    AsyncImage(
+                        model = user.profileImageUrl,
+                        contentDescription = "Profile",
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
             } else {
-                // Handle regular URL
-                AsyncImage(
-                    model = user.profileImageUrl,
-                    contentDescription = "Profile",
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
+                DefaultAvatar(
+                    letter = user.username.firstOrNull()?.uppercase() ?: "?",
+                    modifier = Modifier.size(48.dp)
                 )
             }
-        } else {
-            // Default avatar with first letter
-            DefaultAvatar(
-                letter = user.username.firstOrNull()?.uppercase() ?: "?",
-                modifier = Modifier.size(48.dp)
-            )
         }
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // User info
-        Column {
+        // User info - clickable pour voir le profil
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clickable(onClick = onProfileClick)
+        ) {
             Text(
                 text = user.username,
                 style = MaterialTheme.typography.bodyLarge,
@@ -179,8 +193,59 @@ fun UserItem(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            // Afficher le statut en ligne
+            if (user.isOnline) {
+                Text(
+                    text = "En ligne",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF4CAF50)
+                )
+            }
+        }
+
+        // Bouton Follow
+        if (showFollowButton) {
+            Button(
+                onClick = onFollowClick,
+                enabled = !isLoading,
+                modifier = Modifier.height(36.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isFollowing) Color.LightGray else TBlue,
+                    contentColor = if (isFollowing) Color.Black else Color.White
+                ),
+                contentPadding = PaddingValues(horizontal = 16.dp)
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = if (isFollowing) Color.Black else Color.White
+                    )
+                } else {
+                    Text(
+                        text = if (isFollowing) "Suivi" else "Suivre",
+                        fontSize = 12.sp
+                    )
+                }
+            }
         }
     }
 }
 
-// Base64ProfileImage and DefaultAvatar are now imported from util package
+// Garder l'ancien UserItem pour compatibilité
+@Composable
+fun UserItem(
+    user: User,
+    onClick: () -> Unit
+) {
+    UserItemWithFollow(
+        user = user,
+        isFollowing = false,
+        isLoading = false,
+        onUserClick = onClick,
+        onProfileClick = onClick,
+        onFollowClick = {},
+        showFollowButton = false
+    )
+}

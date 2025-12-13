@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/tradeconnect/MainActivity.kt
 package com.example.tradeconnect
 
 import android.os.Bundle
@@ -16,6 +17,7 @@ import com.example.tradeconnect.data.remote.FirebaseMessagingService
 import com.example.tradeconnect.data.repository.AuthRepository
 import com.example.tradeconnect.data.repository.MessageRepository
 import com.example.tradeconnect.data.repository.ProfileRepository
+import com.example.tradeconnect.data.repository.UserRepository  // NOUVEAU
 import com.example.tradeconnect.nagivation.AppNavHost
 import com.example.tradeconnect.ui.theme.TradeConnectTheme
 import com.example.tradeconnect.uii.SplashScreen
@@ -58,8 +60,9 @@ class MainActivity : ComponentActivity() {
         // Create repositories
         val authRepo = AuthRepository(auth, firestore)
         val profileRepo = ProfileRepository(firestore, auth)
+        val userRepo = UserRepository(firestore, auth)  // NOUVEAU
 
-        // FIXED: Create factory with messageRepository for data clearing on logout
+        // Create factory with messageRepository for data clearing on logout
         val authFactory = AuthViewModel.Factory(authRepo, preferences, messageRepository)
 
         setContent {
@@ -73,12 +76,13 @@ class MainActivity : ComponentActivity() {
                         val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
 
                         when (isLoggedIn) {
-                            null -> SplashScreen(navController) // show a loading screen while checking
+                            null -> SplashScreen(navController)
                             true -> AppNavHost(
                                 navController = navController,
                                 authViewModel = authViewModel,
                                 authRepo = authRepo,
                                 profileRepo = profileRepo,
+                                userRepo = userRepo,  // NOUVEAU
                                 startDestination = "home",
                                 appDatabase = appDatabase,
                                 networkObserver = networkObserver,
@@ -89,6 +93,7 @@ class MainActivity : ComponentActivity() {
                                 authViewModel = authViewModel,
                                 authRepo = authRepo,
                                 profileRepo = profileRepo,
+                                userRepo = userRepo,  // NOUVEAU
                                 startDestination = "login",
                                 appDatabase = appDatabase,
                                 networkObserver = networkObserver,
