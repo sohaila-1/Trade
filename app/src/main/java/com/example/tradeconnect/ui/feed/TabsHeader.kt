@@ -39,10 +39,6 @@ fun TabsHeader(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 20.dp)
     ) {
-
-        // ------------------------------
-        //  BURGER + TITLE
-        // ------------------------------
         Row(verticalAlignment = Alignment.CenterVertically) {
 
             Icon(
@@ -66,9 +62,6 @@ fun TabsHeader(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ------------------------------
-        //  TABS TITLE : Pour vous / Abonnements
-        // ------------------------------
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween

@@ -56,6 +56,7 @@ fun FeedScreen(
         drawerState = drawerState,
         drawerContent = {
             SidebarMenu(
+                navController = navController,
                 isDarkMode = isDarkMode,
                 onToggleTheme = onToggleTheme,
                 onLogoutClick = {
@@ -64,6 +65,7 @@ fun FeedScreen(
                     }
                 }
             )
+
         }
     ) {
 
@@ -113,33 +115,28 @@ fun FeedScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // ⭐ La liste des tweets
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f) // important pour garder le burger cliquable
+                        .weight(1f)
                 ) {
                     items(tweetsToShow) { tweet ->
                         TweetItem(
                             tweet = tweet,
                             isDarkMode = isDarkMode,
                             currentUserId = currentUserId,
-
-                            // ⭐ Correction : onLike reçoit BIEN tweet.id
                             onMoreClick = {
                                 selectedTweetId = tweet.id
                                 showMoreDialog = true
                             },
-                            onLike = { id ->
-                                viewModel.toggleLike(id)
-                            },
-                            onSave = { id ->
-                                viewModel.toggleSave(id)
-                            }
+                            onLike = { id -> viewModel.toggleLike(id) },
+                            onSave = { id -> viewModel.toggleSave(id) }
                         )
                         Divider()
                     }
                 }
+
+
             }
         }
     }

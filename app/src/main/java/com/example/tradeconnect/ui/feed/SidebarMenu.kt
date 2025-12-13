@@ -11,9 +11,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 
 @Composable
 fun SidebarMenu(
+    navController: NavController,
     isDarkMode: Boolean,
     onToggleTheme: () -> Unit,
     onLogoutClick: () -> Unit
@@ -29,7 +31,7 @@ fun SidebarMenu(
     ) {
         Spacer(modifier = Modifier.height(40.dp))
 
-        Row(Modifier.clickable { }) {
+        Row(Modifier.clickable { navController.navigate("profile") }) {
             Icon(Icons.Default.Person, contentDescription = null, tint = textColor)
             Spacer(Modifier.width(12.dp))
             Text("Profile", color = textColor)
@@ -37,7 +39,7 @@ fun SidebarMenu(
 
         Spacer(Modifier.height(22.dp))
 
-        Row(Modifier.clickable { }) {
+        Row(Modifier.clickable { navController.navigate("settings") }) {
             Icon(Icons.Default.Settings, contentDescription = null, tint = textColor)
             Spacer(Modifier.width(12.dp))
             Text("Settings", color = textColor)
@@ -45,7 +47,7 @@ fun SidebarMenu(
 
         Spacer(Modifier.height(22.dp))
 
-        Row(Modifier.clickable { }) {
+        Row(Modifier.clickable { navController.navigate("bookmarks") }) {
             Icon(Icons.Default.Bookmark, contentDescription = null, tint = textColor)
             Spacer(Modifier.width(12.dp))
             Text("Bookmarks", color = textColor)

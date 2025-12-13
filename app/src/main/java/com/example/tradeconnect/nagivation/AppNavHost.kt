@@ -19,6 +19,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.example.tradeconnect.repository.TweetRepository
 import com.example.tradeconnect.repository.UserRepository
 import com.example.tradeconnect.repository.FollowRepository
+import com.example.tradeconnect.ui.feed.BookmarkScreen
 
 // UI Screens
 import com.example.tradeconnect.ui.feed.FeedScreen
@@ -140,11 +141,17 @@ fun AppNavHost(
         }
 
         // BOOKMARKS
-        composable("bookmarks") {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) { Text("Bookmarks screen") }
+        composable(route = "bookmarks") {
+            BookmarkScreen(
+                navController = navController,
+                viewModel = tweetVM,                // ✅ nom correct
+                isDarkMode = isDarkMode,
+                onToggleTheme = { isDarkMode = !isDarkMode }   // ✅ fonction locale
+            )
         }
+
+
+
+
     }
 }

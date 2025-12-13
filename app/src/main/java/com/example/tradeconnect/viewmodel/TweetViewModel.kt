@@ -9,8 +9,12 @@ import com.example.tradeconnect.model.Tweet
 import com.example.tradeconnect.repository.FollowRepository
 import com.example.tradeconnect.repository.TweetRepository
 import com.example.tradeconnect.repository.UserRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
+
+
 
 class TweetViewModel(
     private val tweetRepo: TweetRepository,
@@ -156,8 +160,7 @@ class TweetViewModel(
         }
     }
 
-    // -----------------------------------------------------
-    // 🔥 UTILITAIRE : DERNIER TWEET D’UN USER
+
     // -----------------------------------------------------
     fun getLastTweetOfUser(userId: String): String =
         allTweets.value
@@ -183,9 +186,23 @@ class TweetViewModel(
     }
 
     fun toggleSave(tweetId: String) {
-        val uid = authVM.getCurrentUserId() ?: return
-        tweetRepo.toggleSave(tweetId, uid)
+        val userId = authVM.getCurrentUserId() ?: return
+
+        tweetRepo.toggleSave(tweetId, userId)
+
+        loadSavedTweets()
     }
+
+    val savedTweets = mutableStateOf<List<Tweet>>(emptyList())
+
+    fun loadSavedTweets() {
+        val userId = authVM.getCurrentUserId() ?: return
+
+        tweetRepo.getSavedTweets(userId) { list ->
+            savedTweets.value = list
+        }
+    }
+
 
 
 

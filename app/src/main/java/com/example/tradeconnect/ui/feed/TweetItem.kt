@@ -111,10 +111,19 @@ fun TweetItem(
                                 Icons.Filled.Favorite
                             else
                                 Icons.Filled.FavoriteBorder,
-                            contentDescription = "Like",
+                            contentDescription = null,
                             tint = if (tweet.likes.contains(currentUserId)) Color.Red else textColor
                         )
                     }
+
+                    // Compteur de likes
+                    Text(
+                        text = tweet.likes.size.toString(),
+                        color = secondary,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+
 
                     // SAVE 🔖
                     IconButton(onClick = { onSave(tweet.id) }) {

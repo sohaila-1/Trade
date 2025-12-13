@@ -1,31 +1,21 @@
 package com.example.tradeconnect.ui.feed
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Gif
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.tradeconnect.R
 import com.example.tradeconnect.ui.feed.components.BottomNavBar
 import com.example.tradeconnect.viewmodel.TweetViewModel
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,31 +24,35 @@ fun CreateTweetScreen(
     viewModel: TweetViewModel
 ) {
     var content by remember { mutableStateOf("") }
+    val user = viewModel.authVM.currentUser.value
 
     Scaffold(
         topBar = {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // ANNULER
+                // CANCEL
                 Text(
                     text = "Annuler",
                     color = Color(0xFF1DA1F2),
                     modifier = Modifier.clickable { navController.popBackStack() }
                 )
 
-                // POSTER
+                // POST BUTTON
                 Text(
                     text = "Poster",
                     color = Color.White,
                     modifier = Modifier
-                        .background(Color(0xFF1DA1F2), shape = MaterialTheme.shapes.small)
+                        .background(
+                            if (content.isNotBlank()) Color(0xFF1DA1F2) else Color(0xFF9ECFEF),
+                            shape = MaterialTheme.shapes.small
+                        )
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clickable {
+                        .clickable(enabled = content.isNotBlank()) {
                             viewModel.createTweet(content)
                             navController.popBackStack()
                         }
@@ -66,11 +60,10 @@ fun CreateTweetScreen(
             }
         },
 
-        // ⭐ FOOTER AVEC FIX isDarkMode ⭐
         bottomBar = {
             BottomNavBar(
                 navController = navController,
-                isDarkMode = false   // <<< FIX IMPORTANT
+                isDarkMode = false
             )
         }
     ) { paddingValues ->
@@ -82,31 +75,47 @@ fun CreateTweetScreen(
                 .padding(horizontal = 16.dp)
         ) {
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // CHAMP DE SAISIE DU TWEET
-            TextField(
-                value = content,
-                onValueChange = { content = it },
-                placeholder = { Text("Quoi de neuf ?") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 150.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    disabledContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+            // PROFILE + TEXT INPUT
+            Row(
+                verticalAlignment = Alignment.Top
+            ) {
+                // AVATAR
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color.LightGray)
                 )
-            )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                TextField(
+                    value = content,
+                    onValueChange = { content = it },
+                    placeholder = { Text("Quoi de neuf ?") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 150.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                    )
+                )
+            }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // ICÔNES TWITTER-LIKE
+            // ICON BAR
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(22.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Default.Image, contentDescription = null, tint = Color(0xFF1DA1F2))

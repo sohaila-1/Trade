@@ -1,8 +1,10 @@
 package com.example.tradeconnect.repository
 
 import com.example.tradeconnect.model.Tweet
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import kotlinx.coroutines.tasks.await
 
 class TweetRepository(private val firestore: FirebaseFirestore) {
 
@@ -67,21 +69,35 @@ class TweetRepository(private val firestore: FirebaseFirestore) {
             tx.update(ref, "likes", updatedLikes)
         }
     }
-    fun toggleSave(tweetId: String, uid: String) {
+    fun toggleSave(tweetId: String, userId: String) {
         val ref = tweetsRef.document(tweetId)
 
-        firestore.runTransaction { tx ->
-            val snap = tx.get(ref)
-            val saves = snap.get("saves") as? List<String> ?: emptyList()
+        ref.get().addOnSuccessListener { doc ->
+            val saves = doc.get("saves") as? MutableList<String> ?: mutableListOf()
 
-            val updatedSaves = if (uid in saves) {
-                saves - uid
-            } else {
-                saves + uid
-            }
+            val update = if (saves.contains(userId))
+                FieldValue.arrayRemove(userId)
+            else
+                FieldValue.arrayUnion(userId)
 
-            tx.update(ref, "saves", updatedSaves)
+            ref.update("saves", update)
         }
+    }
+
+    fun getSavedTweets(userId: String, onResult: (List<Tweet>) -> Unit) {
+        tweetsRef.whereArrayContains("saves", userId)
+            .get()
+            .addOnSuccessListener { snap ->
+                onResult(snap.toObjects(Tweet::class.java))
+            }
+            .addOnFailureListener { onResult(emptyList()) }
+    }
+    suspend fun getBookmarkedTweets(userId: String): List<Tweet> {
+        return firestore.collection("tweets")
+            .whereArrayContains("savedBy", userId)
+            .get()
+            .await()
+            .toObjects(Tweet::class.java)
     }
 
 

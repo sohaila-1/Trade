@@ -7,7 +7,8 @@ data class Tweet(
     val content: String = "",
     val timestamp: Long = 0,
 
-    val likes: List<String> = emptyList(),
-    val saves: List<String> = emptyList()
+    val likes: List<String> = emptyList(),   // utilisateurs qui ont liké
+    val saves: List<String> = emptyList()    // utilisateurs qui ont sauvegardé
 )
+
 
