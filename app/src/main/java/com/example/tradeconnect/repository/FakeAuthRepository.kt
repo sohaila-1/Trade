@@ -13,9 +13,10 @@ class FakeAuthRepository : IAuthRepository {
         firstName: String,
         lastName: String,
         phone: String,
+        username: String,
         onResult: (Boolean, String?) -> Unit
     ) {
-        // Simule un succès
+        // Fake signup success (preview / tests)
         onResult(true, null)
     }
 

@@ -78,8 +78,23 @@ fun SignUpScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(50.dp)
         )
+        // 🔽 APRÈS Last name
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = viewModel.username,
+            onValueChange = { viewModel.username = it },
+            label = { Text("Username") },
+            leadingIcon = { Icon(Icons.Default.Person, null) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(50.dp)
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
+
+
+        Spacer(modifier = Modifier.height(12.dp))
+
 
         OutlinedTextField(
             value = viewModel.email,

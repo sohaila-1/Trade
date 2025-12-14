@@ -2,9 +2,7 @@ package com.example.tradeconnect.viewmodel
 
 import IAuthRepository
 import android.util.Patterns
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -29,6 +27,7 @@ class AuthViewModel(
     var firstName by mutableStateOf("")
     var lastName by mutableStateOf("")
     var phone by mutableStateOf("")
+    var username by mutableStateOf("")   // ✅ IMPORTANT
     var errorMessage by mutableStateOf<String?>(null)
     var isLoading by mutableStateOf(false)
 
@@ -108,7 +107,6 @@ class AuthViewModel(
         }
     }
 
-
     /* -------------------------
        SIGN UP
      ------------------------- */
@@ -123,8 +121,10 @@ class AuthViewModel(
             password,
             firstName.trim(),
             lastName.trim(),
-            phone.trim()
+            phone.trim(),
+            username.trim() // ✅ PASSAGE DU USERNAME
         ) { success, error ->
+
             isLoading = false
 
             if (!success) {
@@ -135,7 +135,10 @@ class AuthViewModel(
             currentUser.value = repo.getCurrentUserModel()
             _isLoggedIn.value = true
 
-            viewModelScope.launch { prefs.setRememberMe(rememberMe) }
+            viewModelScope.launch {
+                prefs.setRememberMe(rememberMe)
+            }
+
             onSuccess()
         }
     }
@@ -153,6 +156,7 @@ class AuthViewModel(
             firstName = ""
             lastName = ""
             phone = ""
+            username = ""
             errorMessage = null
 
             currentUser.value = null
@@ -179,6 +183,7 @@ class AuthViewModel(
         errorMessage = null
         if (firstName.isBlank()) return setError("Please enter your first name")
         if (lastName.isBlank()) return setError("Please enter your last name")
+        if (username.isBlank()) return setError("Please enter a username") // ✅
         if (email.isBlank()) return setError("Please enter your email")
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches())
             return setError("Please enter a valid email")

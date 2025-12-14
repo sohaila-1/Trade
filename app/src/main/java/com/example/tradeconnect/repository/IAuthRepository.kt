@@ -17,8 +17,10 @@ interface IAuthRepository {
         firstName: String,
         lastName: String,
         phone: String,
+        username: String,
         onResult: (Boolean, String?) -> Unit
     )
+
 
     fun logout()
 

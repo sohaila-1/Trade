@@ -1,5 +1,6 @@
 package com.example.tradeconnect.repository
 
+import android.util.Log
 import com.example.tradeconnect.data.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -10,16 +11,10 @@ class UserRepository {
     private val usersRef = db.collection("users")
     private val auth = FirebaseAuth.getInstance()
 
-    // ---------------------------
-    // 🔹 ID USER COURANT
-    // ---------------------------
     fun getCurrentUserId(): String? {
         return auth.currentUser?.uid
     }
 
-    // ---------------------------
-    // 🔹 TOUS LES USERS
-    // ---------------------------
     fun getAllUsers(onResult: (List<User>) -> Unit) {
         usersRef.get()
             .addOnSuccessListener { snapshot ->
@@ -56,4 +51,24 @@ class UserRepository {
                 onResult(emptyList())
             }
     }
+
+    // ---------------------------
+// 🔹 USERNAME DU USER COURANT
+// ---------------------------
+    fun getCurrentUsername(onResult: (String) -> Unit) {
+        val userId = getCurrentUserId() ?: return onResult("?")
+
+        usersRef.document(userId)
+            .get()
+            .addOnSuccessListener { doc ->
+                Log.d("USER_REPO", "User doc = ${doc.data}")
+                val username = doc.getString("username")
+                onResult(username ?: "UNKNOWN")
+            }
+            .addOnFailureListener {
+                onResult("ERROR")
+            }
+    }
+
+
 }

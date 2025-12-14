@@ -20,7 +20,7 @@ class TweetViewModel(
     private val tweetRepo: TweetRepository,
     private val followRepo: FollowRepository,
     val authVM: AuthViewModel,
-    private val userRepo: UserRepository
+    private val userRepository: UserRepository,
 ) : ViewModel() {
 
     val myTweets = mutableStateOf<List<Tweet>>(emptyList())
@@ -88,21 +88,28 @@ class TweetViewModel(
     // 🔥 CRÉER UN TWEET
     // -----------------------------------------------------
     fun createTweet(content: String) {
-        val user = authVM.currentUser.value ?: return
+        if (content.isBlank()) return
 
-        val tweet = Tweet(
-            id = UUID.randomUUID().toString(),
-            userId = user.uid,
-            username = user.username,
-            content = content,
-            timestamp = System.currentTimeMillis()
-        )
+        val firebaseUser = authVM.currentUser.value ?: return
+        val userId = firebaseUser.uid
 
-        tweetRepo.postTweet(tweet) {
-            loadMyTweets()
-            loadAllTweets()
+        userRepository.getCurrentUsername { username ->
+
+            val tweet = Tweet(
+                id = UUID.randomUUID().toString(),
+                userId = userId,
+                username = username, // ✅ CORRECTION ICI
+                content = content,
+                timestamp = System.currentTimeMillis()
+            )
+
+            tweetRepo.postTweet(tweet) {
+                loadMyTweets()
+                loadAllTweets()
+            }
         }
     }
+
 
     // -----------------------------------------------------
     // 🔥 ÉDITER / SUPPRIMER
@@ -128,12 +135,13 @@ class TweetViewModel(
     // 🔥 CHARGER TOUS LES USERS (onglet abonnements)
     // -----------------------------------------------------
     fun loadAllUsers() {
-        val currentUid = authVM.getCurrentUserId() ?: return
+        val currentUid = userRepository.getCurrentUserId() ?: return
 
-        userRepo.getAllUsers { users ->
+        userRepository.getAllUsers { users ->
             allUsers.value = users.filter { it.uid != currentUid }
         }
     }
+
 
     // -----------------------------------------------------
     // 🔥 FOLLOW / UNFOLLOW
@@ -202,6 +210,8 @@ class TweetViewModel(
             savedTweets.value = list
         }
     }
+
+
 
 
 

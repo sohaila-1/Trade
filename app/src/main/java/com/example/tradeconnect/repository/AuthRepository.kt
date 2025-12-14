@@ -16,12 +16,8 @@ class AuthRepository(
         onResult: (Boolean, String?) -> Unit
     ) {
         auth.signInWithEmailAndPassword(email, password)
-            .addOnSuccessListener {
-                onResult(true, null)
-            }
-            .addOnFailureListener { e ->
-                onResult(false, e.message)
-            }
+            .addOnSuccessListener { onResult(true, null) }
+            .addOnFailureListener { e -> onResult(false, e.message) }
     }
 
     override fun signUp(
@@ -30,6 +26,7 @@ class AuthRepository(
         firstName: String,
         lastName: String,
         phone: String,
+        username: String,
         onResult: (Boolean, String?) -> Unit
     ) {
         auth.createUserWithEmailAndPassword(email, password)
@@ -41,7 +38,8 @@ class AuthRepository(
                     "email" to email,
                     "firstName" to firstName,
                     "lastName" to lastName,
-                    "phone" to phone
+                    "phone" to phone,
+                    "username" to username // 🔥 LIGNE CLÉ
                 )
 
                 firestore.collection("users")
@@ -68,7 +66,5 @@ class AuthRepository(
             email = user.email ?: ""
         )
     }
-
-
-
 }
+
