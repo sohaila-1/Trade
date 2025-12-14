@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.*
 
 @Composable
@@ -28,6 +29,11 @@ fun BottomNavBar(navController: NavController, isDarkMode: Boolean) {
         FooterIcon(
             icon = Icons.Default.Home,
             onClick = { navController.navigate("feed") }
+        )
+
+        FooterIcon(
+            icon = Icons.AutoMirrored.Default.Message,
+            onClick = { navController.navigate("chat") }
         )
 
         FooterIcon(

@@ -13,14 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.tradeconnect.R
-import com.example.tradeconnect.data.datastore.FakeUserPreferences
-import com.example.tradeconnect.data.repository.FakeAuthRepository
 import com.example.tradeconnect.ui.theme.TBlue
 import com.example.tradeconnect.viewmodel.AuthViewModel
 
@@ -129,7 +124,7 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
         Button(
             onClick = {
                 viewModel.login {
-                    navController.navigate("home") {
+                    navController.navigate("feed") {
                         popUpTo("login") { inclusive = true }
                     }
                 }
@@ -175,24 +170,24 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    val navController = rememberNavController()
-
-    val fakeRepo = FakeAuthRepository()
-    val fakePrefs = FakeUserPreferences()
-
-    val previewViewModel: AuthViewModel = viewModel(
-        factory = AuthViewModel.Factory(fakeRepo, fakePrefs)
-    )
-
-    previewViewModel.apply {
-        email = "preview@example.com"
-        password = "password123"
-    }
-
-    MaterialTheme {
-        LoginScreen(navController = navController, viewModel = previewViewModel)
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun LoginScreenPreview() {
+//    val navController = rememberNavController()
+//
+//    val fakeRepo = FakeAuthRepository()
+//    val fakePrefs = FakeUserPreferences()
+//
+//    val previewViewModel: AuthViewModel = viewModel(
+//        factory = AuthViewModel.Factory(fakeRepo, fakePrefs)
+//    )
+//
+//    previewViewModel.apply {
+//        email = "preview@example.com"
+//        password = "password123"
+//    }
+//
+//    MaterialTheme {
+//        LoginScreen(navController = navController, viewModel = previewViewModel)
+//    }
+//}

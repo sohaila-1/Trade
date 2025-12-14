@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
         // Initialize Firebase instances
         val auth = FirebaseAuth.getInstance()
         val firestore = FirebaseFirestore.getInstance()
-        val realtimeDatabase = FirebaseDatabase.getInstance("https://tradeconnect-670e8-default-rtdb.europe-west1.firebasedatabase.app/")
+        val realtimeDatabase = FirebaseDatabase.getInstance("https://trade-ba41c-default-rtdb.europe-west1.firebasedatabase.app/")
 
         val preferences = UserPreferences(applicationContext)
 

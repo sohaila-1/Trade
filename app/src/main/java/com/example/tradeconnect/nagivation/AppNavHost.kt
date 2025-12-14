@@ -1,14 +1,47 @@
 package com.example.tradeconnect.nagivation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.tradeconnect.uii.chat.ChatScreen
+import androidx.navigation.navArgument
+import com.example.tradeconnect.data.local.AppDatabase
+import com.example.tradeconnect.data.repository.IAuthRepository
+import com.example.tradeconnect.data.repository.IProfileRepository
+import com.example.tradeconnect.data.repository.MessageRepository
+import com.example.tradeconnect.repository.FollowRepository
+import com.example.tradeconnect.repository.TweetRepository
+import com.example.tradeconnect.repository.UserRepository
+import com.example.tradeconnect.ui.chat.ChatListScreen
+import com.example.tradeconnect.ui.chat.ChatScreen
+import com.example.tradeconnect.ui.chat.UserSearchScreen
+import com.example.tradeconnect.ui.feed.BookmarkScreen
+import com.example.tradeconnect.ui.feed.CreateTweetScreen
+import com.example.tradeconnect.ui.feed.EditTweetScreen
+import com.example.tradeconnect.ui.feed.FeedScreen
 import com.example.tradeconnect.uii.home.HomeScreen
 import com.example.tradeconnect.uii.login.LoginScreen
 import com.example.tradeconnect.uii.signup.SignUpScreen
+import com.example.tradeconnect.uii.user.UserProfileScreen
+import com.example.tradeconnect.util.NetworkObserver
 import com.example.tradeconnect.viewmodel.AuthViewModel
+import com.example.tradeconnect.viewmodel.ChatListViewModel
+import com.example.tradeconnect.viewmodel.ProfileViewModel
+import com.example.tradeconnect.viewmodel.TweetViewModel
+import com.example.tradeconnect.viewmodel.UserSearchViewModel
+import com.google.firebase.firestore.FirebaseFirestore
+
 @Composable
 fun AppNavHost(
     navController: NavHostController,
@@ -65,11 +98,11 @@ fun AppNavHost(
         }
 
         // HOME
-        composable("home") {
-            HomeScreen(navController)
-        }
+//        composable("home") {
+//            HomeScreen(navController)
+//        }
 
-        composable("chat_list") {
+        composable("chat") {
             val viewModel: ChatListViewModel = viewModel(
                 factory = ChatListViewModel.Factory(messageRepository)
             )
@@ -101,17 +134,17 @@ fun AppNavHost(
             )
         }
 
-        composable("userprofile") {
+        composable("profile") {
             val profileViewModel: ProfileViewModel = viewModel(
                 factory = ProfileViewModel.Factory(profileRepo, authRepo)
             )
             UserProfileScreen(navController, profileViewModel)
         }
 
-        // CHAT
-        composable("chat") {
-            ChatScreen(navController)
-        }
+//         CHAT
+//        composable("chat") {
+//            ChatScreen(navController)
+//        }
 
         // FEED
         composable("feed") {
@@ -143,12 +176,12 @@ fun AppNavHost(
         }
 
         // PROFILE //this is souhaia name for profilescreen
-        composable("profile") {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) { Text("Profile screen") }
-        }
+//        composable("profile") {
+//            Box(
+//                modifier = Modifier.fillMaxSize(),
+//                contentAlignment = Alignment.Center
+//            ) { Text("Profile screen") }
+//        }
 
         // SETTINGS
         composable("settings") {
@@ -167,4 +200,5 @@ fun AppNavHost(
                 onToggleTheme = { isDarkMode = !isDarkMode }   // ✅ fonction locale
             )
         }
-
+    }
+}

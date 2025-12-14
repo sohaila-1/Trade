@@ -10,6 +10,8 @@ import androidx.compose.runtime.*
 import com.example.tradeconnect.data.datastore.IUserPreferences
 import com.example.tradeconnect.data.repository.IAuthRepository
 import com.example.tradeconnect.data.repository.MessageRepository
+import com.example.tradeconnect.model.AppUser
+import com.google.firebase.auth.FirebaseAuth
 
 class AuthViewModel(
     private val repo: IAuthRepository,
@@ -68,9 +70,7 @@ class AuthViewModel(
     /**
      * Clear any previous error message
      */
-    fun clearError() {
-        errorMessage = null
-    }
+
 
     /**
      * Validate login fields

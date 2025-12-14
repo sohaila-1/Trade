@@ -30,14 +30,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.example.tradeconnect.data.repository.FakeAuthRepository
-import com.example.tradeconnect.data.repository.FakeProfileRepository
 import com.example.tradeconnect.ui.theme.TBlue
 import com.example.tradeconnect.viewmodel.ProfileViewModel
 import com.yalantis.ucrop.UCrop
@@ -598,26 +593,26 @@ private fun decodeBase64ToBitmap(base64String: String): Bitmap? {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun UserProfileScreenPreview() {
-    val navController = rememberNavController()
-
-    val fakeAuthRepo = FakeAuthRepository()
-    val fakeProfileRepo = FakeProfileRepository()
-
-    val previewViewModel: ProfileViewModel = viewModel(
-        factory = ProfileViewModel.Factory(fakeProfileRepo, fakeAuthRepo)
-    )
-
-    previewViewModel.apply {
-        firstName = "John"
-        lastName = "Doe"
-        email = "johndoe@gmail.com"
-        mobile = "+91-123456789"
-    }
-
-    MaterialTheme {
-        UserProfileScreen(navController = navController, viewModel = previewViewModel)
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun UserProfileScreenPreview() {
+//    val navController = rememberNavController()
+//
+//    val fakeAuthRepo = FakeAuthRepository()
+//    val fakeProfileRepo = FakeProfileRepository()
+//
+//    val previewViewModel: ProfileViewModel = viewModel(
+//        factory = ProfileViewModel.Factory(fakeProfileRepo, fakeAuthRepo)
+//    )
+//
+//    previewViewModel.apply {
+//        firstName = "John"
+//        lastName = "Doe"
+//        email = "johndoe@gmail.com"
+//        mobile = "+91-123456789"
+//    }
+//
+//    MaterialTheme {
+//        UserProfileScreen(navController = navController, viewModel = previewViewModel)
+//    }
+//}

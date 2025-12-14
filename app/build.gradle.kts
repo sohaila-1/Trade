@@ -65,11 +65,16 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    implementation("androidx.compose.ui:ui:1.9.4")
-    implementation("androidx.compose.material:material:1.9.4")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.9.4")
-    implementation("androidx.navigation:navigation-compose:2.9.6")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
+    implementation(libs.compose.ui)
+    implementation(libs.compose.material)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.navigation.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
 
     implementation(libs.coroutines.android)
 

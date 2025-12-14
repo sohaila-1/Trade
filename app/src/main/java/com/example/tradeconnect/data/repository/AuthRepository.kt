@@ -1,9 +1,27 @@
 package com.example.tradeconnect.data.repository
 
 import com.example.tradeconnect.data.model.User
+import com.example.tradeconnect.model.AppUser
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+
+
+interface IAuthRepository {
+    fun signUp(
+        email: String,
+        password: String,
+        firstName: String,
+        lastName: String,
+        phone: String,
+        onResult: (Boolean, String?) -> Unit
+    )
+    fun login(email: String, password: String, onResult: (Boolean, String?) -> Unit)
+    fun logout()
+    fun getCurrentUser(): FirebaseUser?
+
+    fun getCurrentUserModel(): AppUser?
+}
 
 open class AuthRepository(
     private val firebaseAuth: FirebaseAuth,
@@ -66,4 +84,13 @@ open class AuthRepository(
     override fun logout() = firebaseAuth.signOut()
 
     override fun getCurrentUser(): FirebaseUser? = firebaseAuth.currentUser
+
+    override fun getCurrentUserModel(): AppUser? {
+        val user = firebaseAuth.currentUser ?: return null
+
+        return AppUser(
+            uid = user.uid,
+            username = user.email?.substringBefore("@") ?: "unknown"
+        )
+    }
 }
