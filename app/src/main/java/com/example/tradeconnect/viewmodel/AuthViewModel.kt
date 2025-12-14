@@ -28,8 +28,22 @@ class AuthViewModel(
     var errorMessage by mutableStateOf<String?>(null)
     var isLoading by mutableStateOf(false)
 
+    // Firebase auth instance
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+
     // remember-me flag (UI state)
     var rememberMe by mutableStateOf(true)
+        private set
+
+    fun updateRememberMe(value: Boolean) {
+        rememberMe = value
+        viewModelScope.launch { prefs.setRememberMe(value) }
+    }
+
+    // -------------------------
+    // 🔹 Utilisateur connecté
+    // -------------------------
+    var currentUser = mutableStateOf<AppUser?>(null)
         private set
 
     private val _isLoggedIn = MutableStateFlow<Boolean?>(null)
@@ -37,17 +51,17 @@ class AuthViewModel(
 
     init {
         viewModelScope.launch {
-            prefs.rememberMeFlow.collectLatest { stored ->
-                val current = repo.getCurrentUser()
-                _isLoggedIn.value = stored && current != null
-            }
-        }
-    }
+            prefs.rememberMeFlow.collectLatest { shouldRemember ->
 
-    fun updateRememberMe(value: Boolean) {
-        rememberMe = value
-        viewModelScope.launch {
-            prefs.setRememberMe(value)
+                val user = repo.getCurrentUserModel()  // AppUser?
+
+                if (shouldRemember && user != null) {
+                    currentUser.value = user
+                    _isLoggedIn.value = true
+                } else {
+                    _isLoggedIn.value = false
+                }
+            }
         }
     }
 
@@ -151,17 +165,21 @@ class AuthViewModel(
 
         isLoading = true
         errorMessage = null
-
-        repo.login(email.trim(), password) { success, error ->
+        repo.login(email, password) { success, error ->
             isLoading = false
             if (success) {
+                //maybe put this 2 lines inside the viewmodelscope
+                val user = repo.getCurrentUserModel()
+                currentUser.value = user
                 viewModelScope.launch {
+                    // persist remember me if checked
                     prefs.setRememberMe(rememberMe)
+
+                    // if we kept user logged in, mark loggedIn true
                     _isLoggedIn.value = true
                     onSuccess()
                 }
             } else {
-                // Map Firebase errors to user-friendly messages
                 errorMessage = mapFirebaseError(error)
             }
         }
@@ -185,6 +203,8 @@ class AuthViewModel(
         ) { success, error ->
             isLoading = false
             if (success) {
+                val user = repo.getCurrentUserModel()
+                currentUser.value = user
                 viewModelScope.launch {
                     if (!rememberMe) {
                         rememberMe = true
@@ -233,6 +253,7 @@ class AuthViewModel(
     }
 
     fun logout(onComplete: (() -> Unit)? = null) {
+        currentUser.value = null
         viewModelScope.launch {
             // Clear all local cached data
             messageRepository?.clearAllData()
@@ -255,6 +276,10 @@ class AuthViewModel(
         }
     }
 
+    fun getCurrentUserId(): String? {
+        return currentUser.value?.uid
+    }
+
     class Factory(
         private val repo: IAuthRepository,
         private val prefs: IUserPreferences,
@@ -265,4 +290,9 @@ class AuthViewModel(
             return AuthViewModel(repo, prefs, messageRepository) as T
         }
     }
+
+    fun clearError() {
+        errorMessage = null
+    }
+
 }

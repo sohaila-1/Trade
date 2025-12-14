@@ -33,7 +33,6 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
     // Set default rememberMe = true on sign up screen and clear errors
     LaunchedEffect(Unit) {
         viewModel.updateRememberMe(true)
-        viewModel.clearError()
     }
 
     // Make the screen scrollable for smaller devices

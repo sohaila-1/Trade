@@ -1,30 +1,14 @@
 package com.example.tradeconnect.nagivation
 
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import com.example.tradeconnect.data.local.AppDatabase
-import com.example.tradeconnect.data.remote.FirebaseMessagingService
-import com.example.tradeconnect.data.repository.IAuthRepository
-import com.example.tradeconnect.data.repository.IProfileRepository
-import com.example.tradeconnect.data.repository.MessageRepository
-import com.example.tradeconnect.ui.chat.ChatListScreen
-import com.example.tradeconnect.ui.chat.ChatScreen
-import com.example.tradeconnect.ui.chat.UserSearchScreen
+import com.example.tradeconnect.uii.chat.ChatScreen
 import com.example.tradeconnect.uii.home.HomeScreen
 import com.example.tradeconnect.uii.login.LoginScreen
 import com.example.tradeconnect.uii.signup.SignUpScreen
-import com.example.tradeconnect.uii.user.UserProfileScreen
-import com.example.tradeconnect.util.NetworkObserver
 import com.example.tradeconnect.viewmodel.AuthViewModel
-import com.example.tradeconnect.viewmodel.ChatListViewModel
-import com.example.tradeconnect.viewmodel.ProfileViewModel
-import com.example.tradeconnect.viewmodel.UserSearchViewModel
-
 @Composable
 fun AppNavHost(
     navController: NavHostController,
@@ -36,23 +20,55 @@ fun AppNavHost(
     networkObserver: NetworkObserver,
     messageRepository: MessageRepository
 ) {
+    // ------------------------------
+    // INIT REPOSITORIES
+    // ------------------------------
+    val tweetRepo = TweetRepository(
+        firestore = FirebaseFirestore.getInstance()   // ✅ correction
+    )
+    val followRepo = FollowRepository()
+    val userRepo = UserRepository()
+
+    // Auth ViewModel déjà fourni
+    val authVM = authViewModel
+
+    // ------------------------------
+    // INIT TWEET VIEWMODEL
+    // ------------------------------
+    val tweetVM = viewModel<TweetViewModel>(
+        factory = TweetViewModel.Factory(
+            tweetRepo = tweetRepo,
+            followRepo = followRepo,
+            authVM = authVM,
+            userRepo = userRepo
+        )
+    )
+
+    var isDarkMode by remember { mutableStateOf(false) }
+
+    // ------------------------------
+    // NAVIGATION
+    // ------------------------------
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
+
+        // LOGIN
         composable("login") {
-            LoginScreen(navController, authViewModel)
+            LoginScreen(navController, authVM)
         }
 
+        // SIGNUP
         composable("signup") {
-            SignUpScreen(navController, authViewModel)
+            SignUpScreen(navController, authVM)
         }
 
+        // HOME
         composable("home") {
-            HomeScreen(navController, authViewModel)
+            HomeScreen(navController)
         }
 
-        // Chat list screen (main messages screen)
         composable("chat_list") {
             val viewModel: ChatListViewModel = viewModel(
                 factory = ChatListViewModel.Factory(messageRepository)
@@ -60,7 +76,7 @@ fun AppNavHost(
             ChatListScreen(navController, viewModel)
         }
 
-         //User search screen (accessed from chat list)
+        //User search screen (accessed from chat list)
         composable("user_search") {
             val viewModel: UserSearchViewModel = viewModel(
                 factory = UserSearchViewModel.Factory(messageRepository)
@@ -91,5 +107,64 @@ fun AppNavHost(
             )
             UserProfileScreen(navController, profileViewModel)
         }
-    }
-}
+
+        // CHAT
+        composable("chat") {
+            ChatScreen(navController)
+        }
+
+        // FEED
+        composable("feed") {
+            FeedScreen(
+                navController = navController,
+                viewModel = tweetVM,
+                isDarkMode = isDarkMode,
+                onToggleTheme = { isDarkMode = !isDarkMode }
+            )
+        }
+
+        // CREATE TWEET
+        composable("createTweet") {
+            CreateTweetScreen(navController, tweetVM)
+        }
+
+        // EDIT TWEET
+        composable(
+            route = "editTweet/{tweetId}",
+            arguments = listOf(navArgument("tweetId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val tweetId = backStackEntry.arguments?.getString("tweetId") ?: ""
+
+            EditTweetScreen(
+                navController = navController,
+                tweetId = tweetId,
+                viewModel = tweetVM
+            )
+        }
+
+        // PROFILE //this is souhaia name for profilescreen
+        composable("profile") {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) { Text("Profile screen") }
+        }
+
+        // SETTINGS
+        composable("settings") {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) { Text("Settings screen") }
+        }
+
+        // BOOKMARKS
+        composable(route = "bookmarks") {
+            BookmarkScreen(
+                navController = navController,
+                viewModel = tweetVM,                // ✅ nom correct
+                isDarkMode = isDarkMode,
+                onToggleTheme = { isDarkMode = !isDarkMode }   // ✅ fonction locale
+            )
+        }
+

@@ -27,7 +27,6 @@ import com.example.tradeconnect.viewmodel.AuthViewModel
 @Composable
 fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
-    // Clear error when screen is first shown
     LaunchedEffect(Unit) {
         viewModel.clearError()
     }

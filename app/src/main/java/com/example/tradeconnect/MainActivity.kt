@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
                                 authViewModel = authViewModel,
                                 authRepo = authRepo,
                                 profileRepo = profileRepo,
-                                startDestination = "home",
+                                startDestination = "feed",
                                 appDatabase = appDatabase,
                                 networkObserver = networkObserver,
                                 messageRepository = messageRepository
@@ -101,3 +101,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+

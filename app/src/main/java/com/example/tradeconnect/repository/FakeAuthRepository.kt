@@ -1,5 +1,6 @@
-package com.example.tradeconnect.data.repository
+package com.example.tradeconnect.repository
 
+import com.example.tradeconnect.model.AppUser
 import com.google.firebase.auth.FirebaseUser
 
 // Fake repository for previews only
@@ -20,5 +21,8 @@ class FakeAuthRepository : IAuthRepository {
     }
     override fun logout() {}
     override fun getCurrentUser(): FirebaseUser? = null
+    override fun getCurrentUserModel(): AppUser? {
+        TODO("Not yet implemented")
+    }
 }
 

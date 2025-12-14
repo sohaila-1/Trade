@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
 
+    kotlin("kapt")
     id("com.google.devtools.ksp") version "2.2.21-2.0.4"
 }
 
@@ -64,16 +65,11 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    implementation(libs.compose.ui)
-    implementation(libs.compose.material)
-    implementation(libs.compose.ui.tooling.preview)
-    implementation(libs.navigation.compose)
-    implementation(libs.lifecycle.viewmodel.compose)
-
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.firestore)
-    implementation(libs.firebase.storage)
+    implementation("androidx.compose.ui:ui:1.9.4")
+    implementation("androidx.compose.material:material:1.9.4")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.9.4")
+    implementation("androidx.navigation:navigation-compose:2.9.6")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
 
     implementation(libs.coroutines.android)
 
@@ -95,4 +91,12 @@ dependencies {
 
     // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    kapt("com.google.dagger:hilt-compiler:2.57.2")
+}
+
+kapt {
+    correctErrorTypes = true
 }

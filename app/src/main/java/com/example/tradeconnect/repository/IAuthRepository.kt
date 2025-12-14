@@ -1,5 +1,6 @@
-package com.example.tradeconnect.data.repository
+package com.example.tradeconnect.repository
 
+import com.example.tradeconnect.model.AppUser
 import com.google.firebase.auth.FirebaseUser
 
 interface IAuthRepository {
@@ -13,5 +14,10 @@ interface IAuthRepository {
     )
     fun login(email: String, password: String, onResult: (Boolean, String?) -> Unit)
     fun logout()
+
     fun getCurrentUser(): FirebaseUser?
+
+    // ❗️ Ici tu avais : fun getCurrentUserModel()
+    // ❗️ qui renvoie Unit → provoque toutes les erreurs
+    fun getCurrentUserModel(): AppUser?
 }

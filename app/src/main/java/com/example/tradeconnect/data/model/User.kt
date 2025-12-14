@@ -8,5 +8,7 @@ data class User(
     val mobile: String = "",
 
     val isOnline: Boolean = false,
-    val lastSeen: Long = System.currentTimeMillis()
+    val lastSeen: Long = System.currentTimeMillis(),
+    val bio: String = "",
+    val isFollowed: Boolean = false
 )
