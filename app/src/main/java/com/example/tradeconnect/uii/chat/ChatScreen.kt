@@ -42,7 +42,8 @@ fun ChatScreen(
     navController: NavController,
     partnerId: String,
     messageRepository: MessageRepository,
-    networkObserver: NetworkObserver
+    networkObserver: NetworkObserver,
+    isDarkMode: Boolean
 ) {
     val scope = rememberCoroutineScope()
 
@@ -55,7 +56,14 @@ fun ChatScreen(
 
     val listState = rememberLazyListState()
 
+    val colorScheme = if (isDarkMode) {
+        darkColorScheme()  // Or your custom dark scheme
+    } else {
+        lightColorScheme()  // Or your custom light scheme
+    }
+
     Log.d("ChatScreen", "Recomposing with ${messages.size} messages")
+
 
     // Observe network status
     LaunchedEffect(Unit) {
@@ -157,265 +165,271 @@ fun ChatScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Profile picture
-                        if (partner != null) {
-                            if (partner!!.profileImageUrl.isNotEmpty()) {
-                                if (partner!!.profileImageUrl.startsWith("data:image")) {
-                                    Base64ProfileImage(
-                                        base64String = partner!!.profileImageUrl,
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .clip(CircleShape)
-                                    )
-                                } else {
-                                    AsyncImage(
-                                        model = partner!!.profileImageUrl,
-                                        contentDescription = "Profile",
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .clip(CircleShape),
-                                        contentScale = ContentScale.Crop
-                                    )
+    MaterialTheme(colorScheme = colorScheme)
+    {
+        Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Profile picture
+                                if (partner != null) {
+                                    if (partner!!.profileImageUrl.isNotEmpty()) {
+                                        if (partner!!.profileImageUrl.startsWith("data:image")) {
+                                            Base64ProfileImage(
+                                                base64String = partner!!.profileImageUrl,
+                                                modifier = Modifier
+                                                    .size(40.dp)
+                                                    .clip(CircleShape)
+                                            )
+                                        } else {
+                                            AsyncImage(
+                                                model = partner!!.profileImageUrl,
+                                                contentDescription = "Profile",
+                                                modifier = Modifier
+                                                    .size(40.dp)
+                                                    .clip(CircleShape),
+                                                contentScale = ContentScale.Crop
+                                            )
+                                        }
+                                    } else {
+                                        DefaultAvatar(
+                                            letter = partner!!.username.firstOrNull()?.uppercase()
+                                                ?: "?",
+                                            modifier = Modifier.size(40.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
                                 }
-                            } else {
-                                DefaultAvatar(
-                                    letter = partner!!.username.firstOrNull()?.uppercase() ?: "?",
-                                    modifier = Modifier.size(40.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                        }
 
-                        Column {
-                            Text(
-                                text = partner?.username ?: "Loading...",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            // Show online status or connection status
-//                            Text(
-//                                text = if (isOnline) "Online" else "Offline",
-//                                style = MaterialTheme.typography.bodySmall,
-//                                color = if (isOnline)
-//                                    MaterialTheme.colorScheme.primary
-//                                else
-//                                    MaterialTheme.colorScheme.onSurfaceVariant
-//                            )
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, "Back")
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            MessageInputBar(
-                messageText = messageText,
-                onMessageChange = { messageText = it },
-                onSendClick = {
-                    val text = messageText.trim()
-                    if (text.isNotEmpty()) {
-                        messageText = ""
-                        scope.launch {
-                            try {
-                                Log.d("ChatScreen", "Sending message (online: $isOnline)")
-                                messageRepository.sendMessage(partnerId, text, isOnline)
-                            } catch (e: CancellationException) {
-                                throw e
-                            } catch (e: Exception) {
-                                Log.e("ChatScreen", "Error sending message", e)
+                                Column {
+                                    Text(
+                                        text = partner?.username ?: "Loading...",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    // Show online status or connection status
+    //                            Text(
+    //                                text = if (isOnline) "Online" else "Offline",
+    //                                style = MaterialTheme.typography.bodySmall,
+    //                                color = if (isOnline)
+    //                                    MaterialTheme.colorScheme.primary
+    //                                else
+    //                                    MaterialTheme.colorScheme.onSurfaceVariant
+    //                            )
+                                }
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.navigateUp() }) {
+                                Icon(Icons.Default.ArrowBack, "Back")
                             }
                         }
-                    }
+                    )
                 },
-                enabled = messageText.isNotBlank()
-            )
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            if (isLoading && messages.isEmpty()) {
-                // Loading state
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Loading messages...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                bottomBar = {
+                    MessageInputBar(
+                        messageText = messageText,
+                        onMessageChange = { messageText = it },
+                        onSendClick = {
+                            val text = messageText.trim()
+                            if (text.isNotEmpty()) {
+                                messageText = ""
+                                scope.launch {
+                                    try {
+                                        Log.d("ChatScreen", "Sending message (online: $isOnline)")
+                                        messageRepository.sendMessage(partnerId, text, isOnline)
+                                    } catch (e: CancellationException) {
+                                        throw e
+                                    } catch (e: Exception) {
+                                        Log.e("ChatScreen", "Error sending message", e)
+                                    }
+                                }
+                            }
+                        },
+                        enabled = messageText.isNotBlank()
                     )
                 }
-            } else if (messages.isEmpty() && !isLoading) {
-                // Empty state
-                Column(
+            ) { padding ->
+                Box(
                     modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .fillMaxSize()
+                        .padding(padding)
                 ) {
-                    Text(
-                        text = "No messages yet",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Start the conversation!",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            } else {
-                // Messages list
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(messages) { message ->
-                        MessageBubble(message = message)
+                    if (isLoading && messages.isEmpty()) {
+                        // Loading state
+                        Column(
+                            modifier = Modifier.align(Alignment.Center),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Loading messages...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else if (messages.isEmpty() && !isLoading) {
+                        // Empty state
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "No messages yet",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Start the conversation!",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    } else {
+                        // Messages list
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(messages) { message ->
+                                MessageBubble(message = message)
+                            }
+                        }
                     }
                 }
             }
         }
     }
-}
 
-@Composable
-fun MessageBubble(message: Message) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (message.isSentByCurrentUser) Alignment.End else Alignment.Start
+
+    @Composable
+    fun MessageBubble(message: Message) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = if (message.isSentByCurrentUser) Alignment.End else Alignment.Start
+        ) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = if (message.isSentByCurrentUser) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                },
+                modifier = Modifier.widthIn(max = 280.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp)
+                ) {
+                    Text(
+                        text = message.text,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (message.isSentByCurrentUser) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = formatMessageTime(message.timestamp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (message.isSentByCurrentUser) {
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            }
+                        )
+
+                        // Show status for sent messages
+                        if (message.isSentByCurrentUser) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            MessageStatusIcon(status = message.status)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun MessageStatusIcon(status: MessageStatus) {
+        val (icon, color) = when (status) {
+            MessageStatus.PENDING -> "⏱" to Color.Gray
+            MessageStatus.SENT -> "✓" to Color.White.copy(alpha = 0.7f)
+            MessageStatus.DELIVERED -> "✓✓" to Color.White.copy(alpha = 0.7f)
+            MessageStatus.SEEN -> "✓✓" to Color.Blue
+        }
+
+        Text(
+            text = icon,
+            style = MaterialTheme.typography.labelSmall,
+            color = color
+        )
+    }
+
+    @Composable
+    fun MessageInputBar(
+        messageText: String,
+        onMessageChange: (String) -> Unit,
+        onSendClick: () -> Unit,
+        enabled: Boolean
     ) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = if (message.isSentByCurrentUser) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant
-            },
-            modifier = Modifier.widthIn(max = 280.dp)
+            shadowElevation = 8.dp,
+            tonalElevation = 0.dp
         ) {
-            Column(
-                modifier = Modifier.padding(12.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.Bottom
             ) {
-                Text(
-                    text = message.text,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (message.isSentByCurrentUser) {
-                        MaterialTheme.colorScheme.onPrimary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+                OutlinedTextField(
+                    value = messageText,
+                    onValueChange = onMessageChange,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
+                    placeholder = { Text("Type a message...") },
+                    maxLines = 5,
+                    shape = RoundedCornerShape(24.dp)
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.fillMaxWidth()
+                IconButton(
+                    onClick = onSendClick,
+                    enabled = enabled,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(
+                            color = if (enabled) MaterialTheme.colorScheme.primary else Color.Gray,
+                            shape = CircleShape
+                        )
                 ) {
-                    Text(
-                        text = formatMessageTime(message.timestamp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (message.isSentByCurrentUser) {
-                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                        }
+                    Icon(
+                        Icons.Default.Send,
+                        contentDescription = "Send",
+                        tint = Color.White
                     )
-
-                    // Show status for sent messages
-                    if (message.isSentByCurrentUser) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        MessageStatusIcon(status = message.status)
-                    }
                 }
             }
         }
     }
-}
 
-@Composable
-fun MessageStatusIcon(status: MessageStatus) {
-    val (icon, color) = when (status) {
-        MessageStatus.PENDING -> "⏱" to Color.Gray
-        MessageStatus.SENT -> "✓" to Color.White.copy(alpha = 0.7f)
-        MessageStatus.DELIVERED -> "✓✓" to Color.White.copy(alpha = 0.7f)
-        MessageStatus.SEEN -> "✓✓" to Color.Blue
-    }
-
-    Text(
-        text = icon,
-        style = MaterialTheme.typography.labelSmall,
-        color = color
-    )
-}
-
-@Composable
-fun MessageInputBar(
-    messageText: String,
-    onMessageChange: (String) -> Unit,
-    onSendClick: () -> Unit,
-    enabled: Boolean
-) {
-    Surface(
-        shadowElevation = 8.dp,
-        tonalElevation = 0.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            OutlinedTextField(
-                value = messageText,
-                onValueChange = onMessageChange,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 8.dp),
-                placeholder = { Text("Type a message...") },
-                maxLines = 5,
-                shape = RoundedCornerShape(24.dp)
-            )
-
-            IconButton(
-                onClick = onSendClick,
-                enabled = enabled,
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        color = if (enabled) MaterialTheme.colorScheme.primary else Color.Gray,
-                        shape = CircleShape
-                    )
-            ) {
-                Icon(
-                    Icons.Default.Send,
-                    contentDescription = "Send",
-                    tint = Color.White
-                )
-            }
-        }
-    }
-}
 
 private fun formatMessageTime(timestamp: Long): String {
     val now = System.currentTimeMillis()

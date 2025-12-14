@@ -34,7 +34,7 @@ class AuthViewModel(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
     // remember-me flag (UI state)
-    var rememberMe by mutableStateOf(true)
+    var rememberMe by mutableStateOf(false)
         private set
 
     fun updateRememberMe(value: Boolean) {

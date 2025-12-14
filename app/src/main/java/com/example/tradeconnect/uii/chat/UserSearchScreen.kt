@@ -42,80 +42,89 @@ import com.example.tradeconnect.viewmodel.UserSearchViewModel
 @Composable
 fun UserSearchScreen(
     navController: NavController,
-    viewModel: UserSearchViewModel
+    viewModel: UserSearchViewModel,
+    isDarkMode: Boolean
 ) {
     val searchResults by viewModel.searchResults.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("New Message") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, "Back")
+    val colorScheme = if (isDarkMode) {
+        darkColorScheme()  // Or your custom dark scheme
+    } else {
+        lightColorScheme()  // Or your custom light scheme
+    }
+    MaterialTheme(colorScheme = colorScheme)
+    {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("New Message") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Icon(Icons.Default.ArrowBack, "Back")
+                        }
                     }
-                }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            // Search bar
-            OutlinedTextField(
-                value = viewModel.searchQuery,
-                onValueChange = { viewModel.updateSearchQuery(it) },
+                )
+            }
+        ) { padding ->
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                placeholder = { Text("Search users...") },
-                leadingIcon = {
-                    Icon(Icons.Default.Search, "Search")
-                },
-                singleLine = true
-            )
-
-            // Loading indicator
-            if (viewModel.isLoading) {
-                Box(
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                // Search bar
+                OutlinedTextField(
+                    value = viewModel.searchQuery,
+                    onValueChange = { viewModel.updateSearchQuery(it) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    contentAlignment = Alignment.Center
+                    placeholder = { Text("Search users...") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, "Search")
+                    },
+                    singleLine = true
+                )
+
+                // Loading indicator
+                if (viewModel.isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                // Search results
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    CircularProgressIndicator()
-                }
-            }
+                    items(searchResults) { user ->
+                        UserItem(
+                            user = user,
+                            onClick = {
+                                navController.navigate("chat/${user.uid}/${user.username}")
+                            }
+                        )
+                    }
 
-            // Search results
-            LazyColumn(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(searchResults) { user ->
-                    UserItem(
-                        user = user,
-                        onClick = {
-                            navController.navigate("chat/${user.uid}/${user.username}")
-                        }
-                    )
-                }
-
-                // Empty state
-                if (!viewModel.isLoading && searchResults.isEmpty() && viewModel.searchQuery.isNotBlank()) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No users found",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                    // Empty state
+                    if (!viewModel.isLoading && searchResults.isEmpty() && viewModel.searchQuery.isNotBlank()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No users found",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }

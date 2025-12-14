@@ -106,7 +106,11 @@ fun AppNavHost(
             val viewModel: ChatListViewModel = viewModel(
                 factory = ChatListViewModel.Factory(messageRepository)
             )
-            ChatListScreen(navController, viewModel)
+            ChatListScreen(
+                navController = navController,
+                viewModel = viewModel,
+                isDarkMode = isDarkMode
+            )
         }
 
         //User search screen (accessed from chat list)
@@ -114,7 +118,11 @@ fun AppNavHost(
             val viewModel: UserSearchViewModel = viewModel(
                 factory = UserSearchViewModel.Factory(messageRepository)
             )
-            UserSearchScreen(navController, viewModel)
+            UserSearchScreen(
+                navController = navController,
+                viewModel = viewModel,
+                isDarkMode = isDarkMode
+            )
         }
 
         composable(
@@ -130,7 +138,8 @@ fun AppNavHost(
                 navController = navController,
                 partnerId = partnerId,
                 messageRepository = messageRepository,
-                networkObserver = networkObserver
+                networkObserver = networkObserver,
+                isDarkMode = isDarkMode
             )
         }
 
@@ -138,7 +147,8 @@ fun AppNavHost(
             val profileViewModel: ProfileViewModel = viewModel(
                 factory = ProfileViewModel.Factory(profileRepo, authRepo)
             )
-            UserProfileScreen(navController, profileViewModel)
+            UserProfileScreen(
+                navController, profileViewModel, isDarkMode)
         }
 
 //         CHAT

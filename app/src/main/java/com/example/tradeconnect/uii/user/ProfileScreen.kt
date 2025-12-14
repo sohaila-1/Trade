@@ -44,7 +44,8 @@ import androidx.core.graphics.toColorInt
 @Composable
 fun UserProfileScreen(
     navController: NavController,
-    viewModel: ProfileViewModel
+    viewModel: ProfileViewModel,
+    isDarkMode: Boolean
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -64,6 +65,12 @@ fun UserProfileScreen(
     // Create a temporary file for cropped image
     val tempCroppedFile = remember {
         File(context.cacheDir, "cropped_profile_${System.currentTimeMillis()}.jpg")
+    }
+
+    val colorScheme = if (isDarkMode) {
+        darkColorScheme()  // Or your custom dark scheme
+    } else {
+        lightColorScheme()  // Or your custom light scheme
     }
 
     // UCrop launcher
@@ -115,435 +122,449 @@ fun UserProfileScreen(
         decodeBase64ToBitmap(viewModel.profileImageUrl)
     }
 
-    // Change Password Bottom Sheet
-    if (showChangePasswordSheet) {
-        ModalBottomSheet(
-            onDismissRequest = {
-                showChangePasswordSheet = false
-                currentPassword = ""
-                newPassword = ""
-                confirmPassword = ""
-                passwordError = null
-                passwordSuccessMessage = null
-            },
-            sheetState = sheetState,
-            containerColor = MaterialTheme.colorScheme.surface
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+    MaterialTheme(colorScheme = colorScheme) {
+        // Change Password Bottom Sheet
+        if (showChangePasswordSheet) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    showChangePasswordSheet = false
+                    currentPassword = ""
+                    newPassword = ""
+                    confirmPassword = ""
+                    passwordError = null
+                    passwordSuccessMessage = null
+                },
+                sheetState = sheetState,
+                containerColor = MaterialTheme.colorScheme.surface
             ) {
-                Text(
-                    text = "Change Password",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = TBlue
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Current Password Field
-                OutlinedTextField(
-                    value = currentPassword,
-                    onValueChange = {
-                        currentPassword = it
-                        passwordError = null
-                        passwordSuccessMessage = null
-                    },
-                    label = { Text("Current Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(50.dp),
-                    enabled = !isChangingPassword,
-                    singleLine = true,
-                    isError = passwordError?.contains("current", ignoreCase = true) == true ||
-                            passwordError?.contains("incorrect", ignoreCase = true) == true
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // New Password Field
-                OutlinedTextField(
-                    value = newPassword,
-                    onValueChange = {
-                        newPassword = it
-                        passwordError = null
-                        passwordSuccessMessage = null
-                    },
-                    label = { Text("New Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(50.dp),
-                    enabled = !isChangingPassword,
-                    singleLine = true,
-                    isError = passwordError?.contains("new password", ignoreCase = true) == true ||
-                            passwordError?.contains("weak", ignoreCase = true) == true ||
-                            passwordError?.contains("6 characters", ignoreCase = true) == true
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Confirm Password Field
-                OutlinedTextField(
-                    value = confirmPassword,
-                    onValueChange = {
-                        confirmPassword = it
-                        passwordError = null
-                        passwordSuccessMessage = null
-                    },
-                    label = { Text("Confirm Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(50.dp),
-                    enabled = !isChangingPassword,
-                    singleLine = true,
-                    isError = passwordError?.contains("match", ignoreCase = true) == true ||
-                            passwordError?.contains("confirm", ignoreCase = true) == true
-                )
-
-                // Error message
-                passwordError?.let { error ->
-                    Spacer(modifier = Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
-                        text = error,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
+                        text = "Change Password",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = TBlue
                     )
-                }
 
-                // Success message
-                passwordSuccessMessage?.let { message ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = message,
-                        color = Color(0xFF4CAF50),
-                        style = MaterialTheme.typography.bodySmall
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Current Password Field
+                    OutlinedTextField(
+                        value = currentPassword,
+                        onValueChange = {
+                            currentPassword = it
+                            passwordError = null
+                            passwordSuccessMessage = null
+                        },
+                        label = { Text("Current Password") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(50.dp),
+                        enabled = !isChangingPassword,
+                        singleLine = true,
+                        isError = passwordError?.contains("current", ignoreCase = true) == true ||
+                                passwordError?.contains("incorrect", ignoreCase = true) == true
                     )
-                }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                // Save Button
-                Button(
-                    onClick = {
-                        // Validate passwords
-                        when {
-                            currentPassword.isBlank() -> {
-                                passwordError = "Please enter your current password"
-                            }
-                            newPassword.isBlank() -> {
-                                passwordError = "Please enter a new password"
-                            }
-                            newPassword.length < 6 -> {
-                                passwordError = "New password must be at least 6 characters"
-                            }
-                            confirmPassword.isBlank() -> {
-                                passwordError = "Please confirm your new password"
-                            }
-                            newPassword != confirmPassword -> {
-                                passwordError = "Passwords do not match"
-                            }
-                            currentPassword == newPassword -> {
-                                passwordError = "New password must be different from current password"
-                            }
-                            else -> {
-                                isChangingPassword = true
-                                viewModel.changePassword(currentPassword, newPassword) { success, error ->
-                                    isChangingPassword = false
-                                    if (success) {
-                                        passwordSuccessMessage = "Password changed successfully"
-                                        currentPassword = ""
-                                        newPassword = ""
-                                        confirmPassword = ""
-                                        // Auto-close after success
-                                        scope.launch {
-                                            kotlinx.coroutines.delay(1500)
-                                            showChangePasswordSheet = false
-                                            passwordSuccessMessage = null
+                    // New Password Field
+                    OutlinedTextField(
+                        value = newPassword,
+                        onValueChange = {
+                            newPassword = it
+                            passwordError = null
+                            passwordSuccessMessage = null
+                        },
+                        label = { Text("New Password") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(50.dp),
+                        enabled = !isChangingPassword,
+                        singleLine = true,
+                        isError = passwordError?.contains(
+                            "new password",
+                            ignoreCase = true
+                        ) == true ||
+                                passwordError?.contains("weak", ignoreCase = true) == true ||
+                                passwordError?.contains("6 characters", ignoreCase = true) == true
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Confirm Password Field
+                    OutlinedTextField(
+                        value = confirmPassword,
+                        onValueChange = {
+                            confirmPassword = it
+                            passwordError = null
+                            passwordSuccessMessage = null
+                        },
+                        label = { Text("Confirm Password") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(50.dp),
+                        enabled = !isChangingPassword,
+                        singleLine = true,
+                        isError = passwordError?.contains("match", ignoreCase = true) == true ||
+                                passwordError?.contains("confirm", ignoreCase = true) == true
+                    )
+
+                    // Error message
+                    passwordError?.let { error ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = error,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+
+                    // Success message
+                    passwordSuccessMessage?.let { message ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = message,
+                            color = Color(0xFF4CAF50),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Save Button
+                    Button(
+                        onClick = {
+                            // Validate passwords
+                            when {
+                                currentPassword.isBlank() -> {
+                                    passwordError = "Please enter your current password"
+                                }
+
+                                newPassword.isBlank() -> {
+                                    passwordError = "Please enter a new password"
+                                }
+
+                                newPassword.length < 6 -> {
+                                    passwordError = "New password must be at least 6 characters"
+                                }
+
+                                confirmPassword.isBlank() -> {
+                                    passwordError = "Please confirm your new password"
+                                }
+
+                                newPassword != confirmPassword -> {
+                                    passwordError = "Passwords do not match"
+                                }
+
+                                currentPassword == newPassword -> {
+                                    passwordError =
+                                        "New password must be different from current password"
+                                }
+
+                                else -> {
+                                    isChangingPassword = true
+                                    viewModel.changePassword(
+                                        currentPassword,
+                                        newPassword
+                                    ) { success, error ->
+                                        isChangingPassword = false
+                                        if (success) {
+                                            passwordSuccessMessage = "Password changed successfully"
+                                            currentPassword = ""
+                                            newPassword = ""
+                                            confirmPassword = ""
+                                            // Auto-close after success
+                                            scope.launch {
+                                                kotlinx.coroutines.delay(1500)
+                                                showChangePasswordSheet = false
+                                                passwordSuccessMessage = null
+                                            }
+                                        } else {
+                                            passwordError = error ?: "Failed to change password"
                                         }
-                                    } else {
-                                        passwordError = error ?: "Failed to change password"
                                     }
                                 }
                             }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = TBlue,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp),
+                        shape = RoundedCornerShape(50.dp),
+                        enabled = !isChangingPassword
+                    ) {
+                        if (isChangingPassword) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = "SAVE",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = TBlue,
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(55.dp),
-                    shape = RoundedCornerShape(50.dp),
-                    enabled = !isChangingPassword
-                ) {
-                    if (isChangingPassword) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Text(
-                            text = "SAVE",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
                     }
                 }
             }
         }
-    }
 
-    // Main Screen Content
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "User Profile",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Medium
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+        // Main Screen Content
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            text = "User Profile",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Medium
                         )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-
-        if (viewModel.isLoading && viewModel.firstName.isEmpty()) {
-            // Initial Loading State
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    CircularProgressIndicator(color = TBlue)
-                    Text(
-                        text = "Loading profile...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        } else {
-            // Main Content
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Profile Picture with Camera Icon
-                Box(
-                    modifier = Modifier.size(120.dp),
-                    contentAlignment = Alignment.BottomEnd
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { imagePickerLauncher.launch("image/*") },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (profileBitmap != null) {
-                            Image(
-                                bitmap = profileBitmap.asImageBitmap(),
-                                contentDescription = "Profile Picture",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
                             Icon(
-                                imageVector = Icons.Default.CameraAlt,
-                                contentDescription = "No Profile Picture",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(48.dp)
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
                             )
-                        }
-
-                        if (viewModel.isUploadingImage) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(40.dp),
-                                color = TBlue
-                            )
-                        }
-                    }
-
-                    // Camera Icon Button
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surface)
-                            .clickable { imagePickerLauncher.launch("image/*") },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "Change Photo",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // First Name Field
-                ProfileTextField(
-                    label = "First Name",
-                    value = viewModel.firstName,
-                    onValueChange = { viewModel.firstName = it },
-                    enabled = !viewModel.isLoading
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Last Name Field
-                ProfileTextField(
-                    label = "Last Name",
-                    value = viewModel.lastName,
-                    onValueChange = { viewModel.lastName = it },
-                    enabled = !viewModel.isLoading
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // E-Mail Field
-                ProfileTextField(
-                    label = "E-Mail",
-                    value = viewModel.email,
-                    onValueChange = { viewModel.email = it },
-                    enabled = !viewModel.isLoading
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Mobile Field
-                ProfileTextField(
-                    label = "Mobile",
-                    value = viewModel.mobile,
-                    onValueChange = { viewModel.mobile = it },
-                    enabled = !viewModel.isLoading
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Error Message
-                viewModel.errorMessage?.let { error ->
-                    Text(
-                        text = error,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
-
-                // Success Message
-                viewModel.successMessage?.let { message ->
-                    Text(
-                        text = message,
-                        color = Color(0xFF4CAF50),
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
-
-                // Save Button
-                Button(
-                    onClick = {
-                        viewModel.saveProfile {
-                            // Optional: navigate back after successful save
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = TBlue,
-                        contentColor = Color.White
-                    ),
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+            },
+            containerColor = MaterialTheme.colorScheme.background
+        ) { paddingValues ->
+
+            if (viewModel.isLoading && viewModel.firstName.isEmpty()) {
+                // Initial Loading State
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(55.dp),
-                    shape = RoundedCornerShape(50.dp),
-                    enabled = !viewModel.isLoading
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
                 ) {
-                    if (viewModel.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CircularProgressIndicator(color = TBlue)
                         Text(
-                            text = "SAVE",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
+                            text = "Loading profile...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Change Password Button
-                OutlinedButton(
-                    onClick = { showChangePasswordSheet = true },
+            } else {
+                // Main Content
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(55.dp),
-                    shape = RoundedCornerShape(50.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = TBlue
-                    ),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(
-                        brush = androidx.compose.ui.graphics.SolidColor(TBlue)
-                    )
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Change Password",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
+                    Spacer(modifier = Modifier.height(32.dp))
 
-                Spacer(modifier = Modifier.height(32.dp))
+                    // Profile Picture with Camera Icon
+                    Box(
+                        modifier = Modifier.size(120.dp),
+                        contentAlignment = Alignment.BottomEnd
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .clickable { imagePickerLauncher.launch("image/*") },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (profileBitmap != null) {
+                                Image(
+                                    bitmap = profileBitmap.asImageBitmap(),
+                                    contentDescription = "Profile Picture",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.CameraAlt,
+                                    contentDescription = "No Profile Picture",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                            }
+
+                            if (viewModel.isUploadingImage) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(40.dp),
+                                    color = TBlue
+                                )
+                            }
+                        }
+
+                        // Camera Icon Button
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surface)
+                                .clickable { imagePickerLauncher.launch("image/*") },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = "Change Photo",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // First Name Field
+                    ProfileTextField(
+                        label = "First Name",
+                        value = viewModel.firstName,
+                        onValueChange = { viewModel.firstName = it },
+                        enabled = !viewModel.isLoading
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Last Name Field
+                    ProfileTextField(
+                        label = "Last Name",
+                        value = viewModel.lastName,
+                        onValueChange = { viewModel.lastName = it },
+                        enabled = !viewModel.isLoading
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // E-Mail Field
+                    ProfileTextField(
+                        label = "E-Mail",
+                        value = viewModel.email,
+                        onValueChange = { viewModel.email = it },
+                        enabled = !viewModel.isLoading
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Mobile Field
+                    ProfileTextField(
+                        label = "Mobile",
+                        value = viewModel.mobile,
+                        onValueChange = { viewModel.mobile = it },
+                        enabled = !viewModel.isLoading
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Error Message
+                    viewModel.errorMessage?.let { error ->
+                        Text(
+                            text = error,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
+                    // Success Message
+                    viewModel.successMessage?.let { message ->
+                        Text(
+                            text = message,
+                            color = Color(0xFF4CAF50),
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
+                    // Save Button
+                    Button(
+                        onClick = {
+                            viewModel.saveProfile {
+                                // Optional: navigate back after successful save
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = TBlue,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp),
+                        shape = RoundedCornerShape(50.dp),
+                        enabled = !viewModel.isLoading
+                    ) {
+                        if (viewModel.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = "SAVE",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Change Password Button
+                    OutlinedButton(
+                        onClick = { showChangePasswordSheet = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp),
+                        shape = RoundedCornerShape(50.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = TBlue
+                        ),
+                        border = ButtonDefaults.outlinedButtonBorder.copy(
+                            brush = androidx.compose.ui.graphics.SolidColor(TBlue)
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Change Password",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
             }
         }
     }
 }
-
 @Composable
 private fun ProfileTextField(
     label: String,
