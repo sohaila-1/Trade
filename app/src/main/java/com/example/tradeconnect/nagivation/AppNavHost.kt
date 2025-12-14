@@ -1,3 +1,5 @@
+// app/src/main/java/com/example/tradeconnect/nagivation/AppNavHost.kt
+package com.example.tradeconnect.nagivation
 package com.example.tradeconnect.navigation
 
 import androidx.compose.runtime.*
@@ -7,6 +9,10 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.tradeconnect.data.local.AppDatabase
+import com.example.tradeconnect.data.repository.IAuthRepository
+import com.example.tradeconnect.data.repository.IProfileRepository
+import com.example.tradeconnect.data.repository.IUserRepository
 import com.google.firebase.firestore.FirebaseFirestore
 
 // Repositories
@@ -22,6 +28,10 @@ import com.example.tradeconnect.repository.IProfileRepository
 import com.example.tradeconnect.ui.chat.ChatListScreen
 import com.example.tradeconnect.ui.chat.ChatScreen
 import com.example.tradeconnect.ui.chat.UserSearchScreen
+import com.example.tradeconnect.ui.user.DiscoverUsersScreen
+import com.example.tradeconnect.ui.user.FollowListScreen
+import com.example.tradeconnect.ui.user.FollowListType
+import com.example.tradeconnect.ui.user.OtherUserProfileScreen
 import com.example.tradeconnect.ui.feed.*
 import com.example.tradeconnect.uii.home.HomeScreen
 import com.example.tradeconnect.uii.login.LoginScreen
@@ -35,6 +45,7 @@ import com.example.tradeconnect.viewmodel.TweetViewModel
 import com.example.tradeconnect.viewmodel.ChatListViewModel
 import com.example.tradeconnect.viewmodel.ProfileViewModel
 import com.example.tradeconnect.viewmodel.UserSearchViewModel
+import com.example.tradeconnect.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 
@@ -42,10 +53,18 @@ import com.google.firebase.auth.FirebaseAuth
 fun AppNavHost(
     navController: NavHostController,
     authViewModel: AuthViewModel,
+    authRepo: IAuthRepository,
+    profileRepo: IProfileRepository,
+    userRepo: IUserRepository,  // NOUVEAU paramètre
     startDestination: String,
     messageRepository: MessageRepository,
     networkObserver: NetworkObserver
 ) {
+    // Créer le UserViewModel une seule fois pour tout le NavHost
+    val userViewModel: UserViewModel = viewModel(
+        factory = UserViewModel.Factory(userRepo)
+    )
+
 
     // ------------------------------
     // REPOSITORIES
@@ -115,9 +134,13 @@ fun AppNavHost(
 
         // ---------- HOME ----------
         composable("home") {
-            HomeScreen(navController, authViewModel)
+            HomeScreen(navController, authViewModel, userViewModel)
         }
 
+        // Chat list screen
+        composable("chat_list") {
+            val viewModel: ChatListViewModel = viewModel(
+                factory = ChatListViewModel.Factory(messageRepository)
         // ---------- FEED ----------
         composable("feed") {
             FeedScreen(
@@ -128,6 +151,7 @@ fun AppNavHost(
             )
         }
 
+        // User search screen (pour nouveau message)
         composable("profile") {
 
             val profileViewModel: ProfileViewModel = viewModel(
@@ -156,9 +180,12 @@ fun AppNavHost(
 
         // ---------- USER SEARCH ----------
         composable("user_search") {
+            val searchViewModel: UserSearchViewModel = viewModel(
+                factory = UserSearchViewModel.Factory(messageRepository)
             val userSearchVM: UserSearchViewModel = viewModel(
                 factory = UserSearchViewModel.Factory(UserRepository())
             )
+            UserSearchScreen(navController, searchViewModel, userViewModel)
 
             UserSearchScreen(
                 navController = navController,
@@ -166,6 +193,7 @@ fun AppNavHost(
             )
         }
 
+        // Chat screen
 
 
         // ---------- CHAT SCREEN ----------
@@ -189,6 +217,10 @@ fun AppNavHost(
             )
         }
 
+        // Mon profil (édition)
+        composable("userprofile") {
+            val profileViewModel: ProfileViewModel = viewModel(
+                factory = ProfileViewModel.Factory(profileRepo, authRepo)
         // ---------- TWEETS ----------
         composable("createTweet") {
             CreateTweetScreen(navController, tweetVM)
@@ -206,6 +238,46 @@ fun AppNavHost(
                 isDarkMode = isDarkMode,
                 onToggleTheme = { isDarkMode = !isDarkMode }
             )
+        }
+
+        // ========== NOUVELLES ROUTES FOLLOW/UNFOLLOW ==========
+
+        // Découvrir des utilisateurs
+        composable("discover_users") {
+            DiscoverUsersScreen(navController, userViewModel)
+        }
+
+        // Profil d'un autre utilisateur
+        composable(
+            route = "other_profile/{userId}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+            OtherUserProfileScreen(navController, userViewModel, userId)
+        }
+
+        // Liste des followers
+        composable(
+            route = "followers/{userId}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+            FollowListScreen(navController, userViewModel, userId, FollowListType.FOLLOWERS)
+        }
+
+        // Liste des abonnements (following)
+        composable(
+            route = "following/{userId}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+            FollowListScreen(navController, userViewModel, userId, FollowListType.FOLLOWING)
         }
     }
 }

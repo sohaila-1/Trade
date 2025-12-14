@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/tradeconnect/MainActivity.kt
 package com.example.tradeconnect
 
 import android.os.Bundle
@@ -19,6 +20,11 @@ import com.example.tradeconnect.data.datastore.UserPreferences
 import com.example.tradeconnect.data.local.AppDatabase
 import com.example.tradeconnect.data.remote.ChatFirebaseService
 import com.example.tradeconnect.data.repository.MessageRepository
+import com.example.tradeconnect.data.repository.ProfileRepository
+import com.example.tradeconnect.data.repository.UserRepository  // NOUVEAU
+import com.example.tradeconnect.nagivation.AppNavHost
+import com.example.tradeconnect.ui.theme.TradeConnectTheme
+import com.example.tradeconnect.uii.SplashScreen
 import com.example.tradeconnect.repository.AuthRepository
 import com.example.tradeconnect.util.NetworkObserver
 
@@ -54,6 +60,10 @@ class MainActivity : ComponentActivity() {
         // 🔹 Network
         val networkObserver = NetworkObserver(applicationContext)
 
+        // Create repositories
+        val authRepo = AuthRepository(auth, firestore)
+        val profileRepo = ProfileRepository(firestore, auth)
+        val userRepo = UserRepository(firestore, auth)  // NOUVEAU
         // 🔹 Repositories
         val authRepository = AuthRepository(auth, firestore)
         val messageRepository = MessageRepository(
@@ -61,6 +71,8 @@ class MainActivity : ComponentActivity() {
             firebaseService = chatFirebaseService
         )
 
+        // Create factory with messageRepository for data clearing on logout
+        val authFactory = AuthViewModel.Factory(authRepo, preferences, messageRepository)
         // 🔹 ViewModel
         val authFactory = AuthViewModel.Factory(authRepository, preferences)
 
@@ -72,6 +84,31 @@ class MainActivity : ComponentActivity() {
                     val authViewModel =
                         ViewModelProvider(this, authFactory)[AuthViewModel::class.java]
 
+                        when (isLoggedIn) {
+                            null -> SplashScreen(navController)
+                            true -> AppNavHost(
+                                navController = navController,
+                                authViewModel = authViewModel,
+                                authRepo = authRepo,
+                                profileRepo = profileRepo,
+                                userRepo = userRepo,  // NOUVEAU
+                                startDestination = "home",
+                                appDatabase = appDatabase,
+                                networkObserver = networkObserver,
+                                messageRepository = messageRepository
+                            )
+                            false -> AppNavHost(
+                                navController = navController,
+                                authViewModel = authViewModel,
+                                authRepo = authRepo,
+                                profileRepo = profileRepo,
+                                userRepo = userRepo,  // NOUVEAU
+                                startDestination = "login",
+                                appDatabase = appDatabase,
+                                networkObserver = networkObserver,
+                                messageRepository = messageRepository
+                            )
+                        }
                     val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
 
                     when (isLoggedIn) {
