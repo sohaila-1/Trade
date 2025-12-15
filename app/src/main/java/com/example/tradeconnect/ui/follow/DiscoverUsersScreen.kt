@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.tradeconnect.ui.theme.TBlue
 import com.example.tradeconnect.viewmodel.FollowViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,67 +20,62 @@ import com.example.tradeconnect.viewmodel.FollowViewModel
 fun DiscoverUsersScreen(
     navController: NavController,
     followViewModel: FollowViewModel,
-    isDarkMode: Boolean
 ) {
     val allUsers by followViewModel.allUsers.collectAsState()
     val followingStatus by followViewModel.followingStatus.collectAsState()
     val isLoading = followViewModel.isLoading
     val followLoadingUserId = followViewModel.isFollowLoading
 
-    val colorScheme = if (isDarkMode) darkColorScheme() else lightColorScheme()
-
-    MaterialTheme(colorScheme = colorScheme) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Découvrir") },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
-                        }
-                    }
-                )
-            }
-        ) { padding ->
-            if (allUsers.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(color = TBlue)
-                    } else {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("🔍", fontSize = 48.sp)
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text("Aucun utilisateur trouvé", fontSize = 16.sp)
-                        }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Découvrir") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
                     }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(allUsers) { user ->
-                        FollowUserItem(
-                            user = user,
-                            isFollowing = followingStatus[user.uid] ?: false,
-                            isLoading = followLoadingUserId == user.uid,
-                            isCurrentUser = followViewModel.isCurrentUser(user.uid),
-                            onUserClick = {
-                                navController.navigate("user_profile/${user.uid}")
-                            },
-                            onFollowClick = {
-                                followViewModel.toggleFollow(user.uid)
-                            }
-                        )
+            )
+        }
+    ) { padding ->
+        if (allUsers.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator()
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("🔍", fontSize = 48.sp)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Aucun utilisateur trouvé", fontSize = 16.sp)
                     }
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(allUsers) { user ->
+                    FollowUserItem(
+                        user = user,
+                        isFollowing = followingStatus[user.uid] ?: false,
+                        isLoading = followLoadingUserId == user.uid,
+                        isCurrentUser = followViewModel.isCurrentUser(user.uid),
+                        onUserClick = {
+                            navController.navigate("user_profile/${user.uid}")
+                        },
+                        onFollowClick = {
+                            followViewModel.toggleFollow(user.uid)
+                        }
+                    )
                 }
             }
         }

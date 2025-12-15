@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.tradeconnect.data.model.User
-import com.example.tradeconnect.ui.theme.TBlue
 import com.example.tradeconnect.util.Base64ProfileImage
 import com.example.tradeconnect.util.DefaultAvatar
 import com.example.tradeconnect.viewmodel.FollowViewModel
@@ -37,7 +36,6 @@ fun FollowListScreen(
     followViewModel: FollowViewModel,
     userId: String,
     listType: FollowListType,
-    isDarkMode: Boolean
 ) {
     val followers by followViewModel.followers.collectAsState()
     val following by followViewModel.following.collectAsState()
@@ -90,7 +88,7 @@ fun FollowListScreen(
                         .padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = TBlue)
+                    CircularProgressIndicator()
                 }
             }
             users.isEmpty() -> {
@@ -114,8 +112,8 @@ fun FollowListScreen(
                                 FollowListType.FOLLOWERS -> "Aucun follower"
                                 FollowListType.FOLLOWING -> "Aucun abonnement"
                             },
-                            color = Color.Gray,
-                            fontSize = 16.sp
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -206,7 +204,7 @@ fun FollowUserItem(
                 )
                 Text(
                     text = user.email,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp,
                     maxLines = 1
                 )
@@ -228,8 +226,8 @@ fun FollowUserItem(
                     modifier = Modifier.height(36.dp),
                     shape = RoundedCornerShape(18.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isFollowing) Color.LightGray else TBlue,
-                        contentColor = if (isFollowing) Color.Black else Color.White
+                        containerColor = if (isFollowing) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
+                        contentColor = if (isFollowing) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary
                     ),
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
@@ -237,7 +235,6 @@ fun FollowUserItem(
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp,
-                            color = if (isFollowing) Color.Black else Color.White
                         )
                     } else {
                         Text(

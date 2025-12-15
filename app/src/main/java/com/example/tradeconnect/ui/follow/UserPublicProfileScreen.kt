@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.tradeconnect.ui.theme.TBlue
 import com.example.tradeconnect.util.Base64ProfileImage
 import com.example.tradeconnect.util.DefaultAvatar
 import com.example.tradeconnect.viewmodel.FollowViewModel
@@ -34,7 +34,6 @@ fun UserPublicProfileScreen(
     navController: NavController,
     followViewModel: FollowViewModel,
     userId: String,
-    isDarkMode: Boolean
 ) {
     val selectedUser by followViewModel.selectedUser.collectAsState()
     val currentUser by followViewModel.currentUser.collectAsState()
@@ -65,6 +64,13 @@ fun UserPublicProfileScreen(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Retour")
                     }
+                },
+                actions = {
+                    if (isOwnProfile) {
+                        IconButton(onClick = { navController.navigate("settings") }) {
+                            Icon(Icons.Default.Settings, contentDescription = "Paramètres")
+                        }
+                    }
                 }
             )
         }
@@ -76,7 +82,7 @@ fun UserPublicProfileScreen(
                     .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = TBlue)
+                CircularProgressIndicator()
             }
         } else {
             selectedUser?.let { user ->
@@ -142,7 +148,7 @@ fun UserPublicProfileScreen(
                     Text(
                         text = user.email,
                         fontSize = 14.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     // Statut en ligne
@@ -150,7 +156,7 @@ fun UserPublicProfileScreen(
                     Text(
                         text = if (user.isOnline) "🟢 En ligne" else "⚫ ${user.getLastSeenText()}",
                         fontSize = 12.sp,
-                        color = if (user.isOnline) Color(0xFF4CAF50) else Color.Gray
+                        color = if (user.isOnline) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     // Badge "Vous suit"
@@ -158,13 +164,13 @@ fun UserPublicProfileScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = TBlue.copy(alpha = 0.1f)
+                            color = MaterialTheme.colorScheme.secondaryContainer
                         ) {
                             Text(
                                 text = "Vous suit",
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                                 fontSize = 12.sp,
-                                color = TBlue
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         }
                     }
@@ -175,7 +181,6 @@ fun UserPublicProfileScreen(
                         Text(
                             text = user.bio,
                             fontSize = 14.sp,
-                            color = Color.DarkGray,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -208,7 +213,6 @@ fun UserPublicProfileScreen(
                                 Text(
                                     text = "Followers",
                                     fontSize = 14.sp,
-                                    color = Color.Gray
                                 )
                             }
 
@@ -217,7 +221,7 @@ fun UserPublicProfileScreen(
                                 modifier = Modifier
                                     .width(1.dp)
                                     .height(40.dp)
-                                    .background(Color.Gray.copy(alpha = 0.3f))
+                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
                             )
 
                             // Following
@@ -235,7 +239,6 @@ fun UserPublicProfileScreen(
                                 Text(
                                     text = "Abonnements",
                                     fontSize = 14.sp,
-                                    color = Color.Gray
                                 )
                             }
                         }
@@ -254,15 +257,14 @@ fun UserPublicProfileScreen(
                                 .height(50.dp),
                             shape = RoundedCornerShape(25.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isFollowing) Color.LightGray else TBlue,
-                                contentColor = if (isFollowing) Color.Black else Color.White
+                                containerColor = if (isFollowing) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
+                                contentColor = if (isFollowing) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary
                             )
                         ) {
                             if (isFollowLoading) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
                                     strokeWidth = 2.dp,
-                                    color = if (isFollowing) Color.Black else Color.White
                                 )
                             } else {
                                 Text(
@@ -296,7 +298,7 @@ fun UserPublicProfileScreen(
                     } else {
                         // C'est son propre profil
                         OutlinedButton(
-                            onClick = { navController.navigate("profile") },
+                            onClick = { navController.navigate("edit_profile") },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp),
@@ -323,7 +325,7 @@ fun UserPublicProfileScreen(
                         .padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Utilisateur non trouvé", color = Color.Gray)
+                    Text("Utilisateur non trouvé")
                 }
             }
         }

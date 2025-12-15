@@ -39,119 +39,109 @@ fun ChatListScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
 
-    val colorScheme = if (isDarkMode) {
-        darkColorScheme()  // Or your custom dark scheme
-    } else {
-        lightColorScheme()  // Or your custom light scheme
-    }
-    MaterialTheme(colorScheme = colorScheme)
-    {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Messages") },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                        }
-                    },
-                    actions = {
-                        // Refresh button
-                        IconButton(
-                            onClick = { viewModel.refresh() },
-                            enabled = !isSyncing
-                        ) {
-                            if (isSyncing) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(Icons.Default.Refresh, "Refresh")
-                            }
-                        }
-
-                        IconButton(onClick = { navController.navigate("user_search") }) {
-                            Icon(Icons.Default.Search, "Search users")
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Messages") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    // Refresh button
+                    IconButton(
+                        onClick = { viewModel.refresh() },
+                        enabled = !isSyncing
+                    ) {
+                        if (isSyncing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(Icons.Default.Refresh, "Refresh")
                         }
                     }
-                )
-            },
-            bottomBar = {
-                BottomNavBar(navController = navController, isDarkMode = isDarkMode)
+
+                    IconButton(onClick = { navController.navigate("user_search") }) {
+                        Icon(Icons.Default.Search, "Search users")
+                    }
+                }
+            )
+        },
+        bottomBar = {
+            BottomNavBar(navController = navController, isDarkMode = isDarkMode)
+        }
+    ) { padding ->
+        when {
+            isLoading && chats.isEmpty() -> {
+                // Initial loading state
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CircularProgressIndicator()
+                        Text(
+                            text = "Loading conversations...",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
             }
-        ) { padding ->
-            when {
-                isLoading && chats.isEmpty() -> {
-                    // Initial loading state
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding),
-                        contentAlignment = Alignment.Center
+
+            chats.isEmpty() && !isLoading -> {
+                // Empty state
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            CircularProgressIndicator()
-                            Text(
-                                text = "Loading conversations...",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        Text(
+                            text = "No messages yet",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Button(onClick = { navController.navigate("user_search") }) {
+                            Icon(Icons.Default.Search, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Start a conversation")
                         }
                     }
                 }
+            }
 
-                chats.isEmpty() && !isLoading -> {
-                    // Empty state
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Text(
-                                text = "No messages yet",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Button(onClick = { navController.navigate("user_search") }) {
-                                Icon(Icons.Default.Search, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Start a conversation")
+            else -> {
+                // Chat list
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                ) {
+                    items(chats) { chat ->
+                        ChatPreviewItem(
+                            chat = chat,
+                            onClick = {
+                                navController.navigate("chat/${chat.user.uid}/${chat.user.username}")
                             }
-                        }
-                    }
-                }
-
-                else -> {
-                    // Chat list
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                    ) {
-                        items(chats) { chat ->
-                            ChatPreviewItem(
-                                chat = chat,
-                                onClick = {
-                                    navController.navigate("chat/${chat.user.uid}/${chat.user.username}")
-                                }
-                            )
-                            HorizontalDivider()
-                        }
+                        )
+                        HorizontalDivider()
                     }
                 }
             }
         }
     }
-    }
+}
 
 
 @Composable
@@ -231,7 +221,6 @@ fun ChatPreviewItem(
                     Text(
                         text = formatChatTime(chat.lastMessageTime),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

@@ -35,6 +35,7 @@ import com.example.tradeconnect.ui.follow.DiscoverUsersScreen
 import com.example.tradeconnect.ui.follow.FollowListScreen
 import com.example.tradeconnect.ui.follow.FollowListType
 import com.example.tradeconnect.ui.follow.UserPublicProfileScreen
+import com.example.tradeconnect.ui.settings.SettingsScreen
 import com.example.tradeconnect.uii.home.HomeScreen
 import com.example.tradeconnect.uii.login.LoginScreen
 import com.example.tradeconnect.uii.signup.SignUpScreen
@@ -157,8 +158,18 @@ fun AppNavHost(
 
         // ==================== PROFILE ====================
 
-        // Mon profil (édition)
+        // Mon profil (consultation)
         composable("profile") {
+            val userId = authVM.getCurrentUserId() ?: return@composable
+            UserPublicProfileScreen(
+                navController = navController,
+                followViewModel = followVM,
+                userId = userId,
+            )
+        }
+
+        // Mon profil (édition)
+        composable("edit_profile") {
             val profileViewModel: ProfileViewModel = viewModel(
                 factory = ProfileViewModel.Factory(profileRepo, authRepo)
             )
@@ -221,7 +232,6 @@ fun AppNavHost(
                 navController = navController,
                 followViewModel = followVM,
                 userId = userId,
-                isDarkMode = isDarkMode
             )
         }
 
@@ -236,7 +246,6 @@ fun AppNavHost(
                 followViewModel = followVM,
                 userId = userId,
                 listType = FollowListType.FOLLOWERS,
-                isDarkMode = isDarkMode
             )
         }
 
@@ -251,7 +260,6 @@ fun AppNavHost(
                 followViewModel = followVM,
                 userId = userId,
                 listType = FollowListType.FOLLOWING,
-                isDarkMode = isDarkMode
             )
         }
 // Découvrir des utilisateurs
@@ -259,16 +267,17 @@ fun AppNavHost(
             DiscoverUsersScreen(
                 navController = navController,
                 followViewModel = followVM,
-                isDarkMode = isDarkMode
             )
         }
         // ==================== SETTINGS ====================
 
         composable("settings") {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) { Text("Settings screen") }
+            SettingsScreen(
+                navController = navController,
+                authViewModel = authVM,
+                isDarkMode = isDarkMode,
+                onToggleTheme = { isDarkMode = !isDarkMode }
+            )
         }
     }
 }
