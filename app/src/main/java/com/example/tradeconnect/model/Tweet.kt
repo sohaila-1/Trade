@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/tradeconnect/model/Tweet.kt
 package com.example.tradeconnect.model
 
 data class Tweet(
@@ -10,5 +9,6 @@ data class Tweet(
 
     val likes: List<String> = emptyList(),
     val saves: List<String> = emptyList(),
+    val retweets: List<String> = emptyList(),  // 🆕 Liste des retweets
     val commentsCount: Int = 0
 )

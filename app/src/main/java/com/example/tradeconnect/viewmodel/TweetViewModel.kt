@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/tradeconnect/viewmodel/TweetViewModel.kt
 package com.example.tradeconnect.viewmodel
 
 import androidx.compose.runtime.mutableStateOf
@@ -34,23 +33,18 @@ class TweetViewModel(
 
     // ==================== COMMENTAIRES ====================
 
-    // Tweet sélectionné pour les commentaires
     private val _selectedTweet = MutableStateFlow<Tweet?>(null)
     val selectedTweet: StateFlow<Tweet?> = _selectedTweet.asStateFlow()
 
-    // Liste des commentaires
     private val _comments = MutableStateFlow<List<Comment>>(emptyList())
     val comments: StateFlow<List<Comment>> = _comments.asStateFlow()
 
-    // État de chargement des commentaires
     private val _isCommentsLoading = MutableStateFlow(false)
     val isCommentsLoading: StateFlow<Boolean> = _isCommentsLoading.asStateFlow()
 
-    // État d'envoi d'un commentaire
     private val _isPostingComment = MutableStateFlow(false)
     val isPostingComment: StateFlow<Boolean> = _isPostingComment.asStateFlow()
 
-    // Erreur
     private val _commentError = MutableStateFlow<String?>(null)
     val commentError: StateFlow<String?> = _commentError.asStateFlow()
 
@@ -67,7 +61,7 @@ class TweetViewModel(
     }
 
     // -----------------------------------------------------
-    // 🔥 CHARGER TOUS LES TWEETS
+    // 🔥 CHARGER TOUS LES TWEETS (temps réel)
     // -----------------------------------------------------
     fun loadAllTweets() {
         tweetRepo.getAllTweets { list ->
@@ -89,7 +83,7 @@ class TweetViewModel(
     }
 
     // -----------------------------------------------------
-    // 🔥 VERSION UNIQUE ET CORRECTE loadFollowingTweets
+    // 🔥 CHARGER LES TWEETS DES ABONNEMENTS
     // -----------------------------------------------------
     private fun loadFollowingTweets(ids: List<String>) {
         if (ids.isEmpty()) {
@@ -125,8 +119,7 @@ class TweetViewModel(
         )
 
         tweetRepo.postTweet(tweet) {
-            loadMyTweets()
-            loadAllTweets()
+            // Les listeners temps réel vont mettre à jour automatiquement
         }
     }
 
@@ -135,15 +128,13 @@ class TweetViewModel(
     // -----------------------------------------------------
     fun editTweet(id: String, newContent: String) {
         tweetRepo.updateTweet(id, newContent) {
-            loadMyTweets()
-            loadAllTweets()
+            // Les listeners temps réel vont mettre à jour automatiquement
         }
     }
 
     fun deleteTweet(id: String) {
         tweetRepo.deleteTweet(id) {
-            loadMyTweets()
-            loadAllTweets()
+            // Les listeners temps réel vont mettre à jour automatiquement
         }
     }
 
@@ -152,7 +143,7 @@ class TweetViewModel(
             ?: allTweets.value.firstOrNull { it.id == id }
 
     // -----------------------------------------------------
-    // 🔥 CHARGER TOUS LES USERS (onglet abonnements)
+    // 🔥 CHARGER TOUS LES USERS
     // -----------------------------------------------------
     fun loadAllUsers() {
         val currentUid = authVM.getCurrentUserId() ?: return
@@ -170,7 +161,6 @@ class TweetViewModel(
             followRepo.followUser(targetUid)
             loadFollowingUsers()
             loadAllUsers()
-            loadAllTweets()
         }
     }
 
@@ -179,11 +169,9 @@ class TweetViewModel(
             followRepo.unfollowUser(targetUid)
             loadFollowingUsers()
             loadAllUsers()
-            loadAllTweets()
         }
     }
 
-    // -----------------------------------------------------
     fun getLastTweetOfUser(userId: String): String =
         allTweets.value
             .filter { it.userId == userId }
@@ -191,17 +179,77 @@ class TweetViewModel(
             ?.content ?: ""
 
     // -----------------------------------------------------
-    // 🔥 LIKE / SAVE
+    // 🔥 LIKE (avec mise à jour optimiste)
     // -----------------------------------------------------
     fun toggleLike(tweetId: String) {
         val uid = authVM.getCurrentUserId() ?: return
+
+        // 🚀 Mise à jour optimiste IMMÉDIATE
+        allTweets.value = allTweets.value.map { tweet ->
+            if (tweet.id == tweetId) {
+                val newLikes = if (tweet.likes.contains(uid)) {
+                    tweet.likes - uid
+                } else {
+                    tweet.likes + uid
+                }
+                tweet.copy(likes = newLikes)
+            } else {
+                tweet
+            }
+        }
+
+        myTweets.value = myTweets.value.map { tweet ->
+            if (tweet.id == tweetId) {
+                val newLikes = if (tweet.likes.contains(uid)) {
+                    tweet.likes - uid
+                } else {
+                    tweet.likes + uid
+                }
+                tweet.copy(likes = newLikes)
+            } else {
+                tweet
+            }
+        }
+
+        // Mettre à jour Firebase en arrière-plan
         tweetRepo.toggleLike(tweetId, uid)
     }
 
+    // -----------------------------------------------------
+    // 🔥 SAVE (avec mise à jour optimiste)
+    // -----------------------------------------------------
     fun toggleSave(tweetId: String) {
         val userId = authVM.getCurrentUserId() ?: return
+
+        // 🚀 Mise à jour optimiste IMMÉDIATE
+        allTweets.value = allTweets.value.map { tweet ->
+            if (tweet.id == tweetId) {
+                val newSaves = if (tweet.saves.contains(userId)) {
+                    tweet.saves - userId
+                } else {
+                    tweet.saves + userId
+                }
+                tweet.copy(saves = newSaves)
+            } else {
+                tweet
+            }
+        }
+
+        myTweets.value = myTweets.value.map { tweet ->
+            if (tweet.id == tweetId) {
+                val newSaves = if (tweet.saves.contains(userId)) {
+                    tweet.saves - userId
+                } else {
+                    tweet.saves + userId
+                }
+                tweet.copy(saves = newSaves)
+            } else {
+                tweet
+            }
+        }
+
+        // Mettre à jour Firebase en arrière-plan
         tweetRepo.toggleSave(tweetId, userId)
-        loadSavedTweets()
     }
 
     val savedTweets = mutableStateOf<List<Tweet>>(emptyList())
@@ -215,17 +263,14 @@ class TweetViewModel(
 
     // ==================== COMMENTAIRES ====================
 
-    // Charger un tweet et ses commentaires
     fun loadTweetWithComments(tweetId: String) {
         viewModelScope.launch {
             _isCommentsLoading.value = true
             _commentError.value = null
 
-            // Charger le tweet
             val tweet = tweetRepo.getTweetById(tweetId)
             _selectedTweet.value = tweet
 
-            // Observer les commentaires en temps réel
             commentsJob?.cancel()
             commentsJob = viewModelScope.launch {
                 tweetRepo.observeComments(tweetId).collect { commentsList ->
@@ -236,7 +281,6 @@ class TweetViewModel(
         }
     }
 
-    // Observer un tweet en temps réel (pour voir les updates)
     fun observeTweet(tweetId: String) {
         viewModelScope.launch {
             tweetRepo.observeTweet(tweetId).collect { tweet ->
@@ -245,7 +289,6 @@ class TweetViewModel(
         }
     }
 
-    // Ajouter un commentaire
     fun addComment(tweetId: String, content: String) {
         val user = authVM.currentUser.value ?: return
 
@@ -273,34 +316,38 @@ class TweetViewModel(
             }
 
             _isPostingComment.value = false
-
-            // Recharger les tweets pour mettre à jour le compteur
-            loadMyTweets()
-            loadAllTweets()
         }
     }
 
-    // Supprimer un commentaire
     fun deleteComment(tweetId: String, commentId: String) {
         viewModelScope.launch {
             val result = tweetRepo.deleteComment(tweetId, commentId)
             result.onFailure { e ->
                 _commentError.value = e.message ?: "Erreur lors de la suppression"
             }
-
-            // Recharger les tweets pour mettre à jour le compteur
-            loadMyTweets()
-            loadAllTweets()
         }
     }
 
-    // Liker un commentaire
     fun toggleCommentLike(tweetId: String, commentId: String) {
         val userId = authVM.getCurrentUserId() ?: return
+
+        // 🚀 Mise à jour optimiste pour les commentaires
+        _comments.value = _comments.value.map { comment ->
+            if (comment.id == commentId) {
+                val newLikes = if (comment.likes.contains(userId)) {
+                    comment.likes - userId
+                } else {
+                    comment.likes + userId
+                }
+                comment.copy(likes = newLikes)
+            } else {
+                comment
+            }
+        }
+
         tweetRepo.toggleCommentLike(tweetId, commentId, userId)
     }
 
-    // Nettoyer quand on quitte l'écran des commentaires
     fun clearComments() {
         commentsJob?.cancel()
         _selectedTweet.value = null
@@ -310,6 +357,39 @@ class TweetViewModel(
 
     fun clearCommentError() {
         _commentError.value = null
+    }
+    fun toggleRetweet(tweetId: String) {
+        val userId = authVM.getCurrentUserId() ?: return
+
+        // 🚀 Mise à jour optimiste IMMÉDIATE
+        allTweets.value = allTweets.value.map { tweet ->
+            if (tweet.id == tweetId) {
+                val newRetweets = if (tweet.retweets.contains(userId)) {
+                    tweet.retweets - userId
+                } else {
+                    tweet.retweets + userId
+                }
+                tweet.copy(retweets = newRetweets)
+            } else {
+                tweet
+            }
+        }
+
+        myTweets.value = myTweets.value.map { tweet ->
+            if (tweet.id == tweetId) {
+                val newRetweets = if (tweet.retweets.contains(userId)) {
+                    tweet.retweets - userId
+                } else {
+                    tweet.retweets + userId
+                }
+                tweet.copy(retweets = newRetweets)
+            } else {
+                tweet
+            }
+        }
+
+        // Mettre à jour Firebase en arrière-plan
+        tweetRepo.toggleRetweet(tweetId, userId)
     }
 
     // -----------------------------------------------------

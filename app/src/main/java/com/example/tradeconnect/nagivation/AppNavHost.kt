@@ -11,6 +11,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.example.tradeconnect.ui.notifications.NotificationsScreen
+
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.tradeconnect.ui.feed.TweetDetailScreen
@@ -283,7 +285,13 @@ fun AppNavHost(
             )
         }
         // ==================== SETTINGS ====================
-
+// Dans le NavHost { ... }, ajoute :
+        composable("notifications") {
+            NotificationsScreen(
+                navController = navController,
+                isDarkMode = isDarkMode
+            )
+        }
         composable("settings") {
             SettingsScreen(
                 navController = navController,

@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/tradeconnect/repository/TweetRepository.kt
 package com.example.tradeconnect.repository
 
 import com.example.tradeconnect.model.Comment
@@ -26,6 +25,10 @@ class TweetRepository(private val firestore: FirebaseFirestore) {
     }
 
     fun getTweetsFromUsers(uids: List<String>, onResult: (List<Tweet>) -> Unit) {
+        if (uids.isEmpty()) {
+            onResult(emptyList())
+            return
+        }
         tweetsRef.whereIn("userId", uids)
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snap, _ ->
@@ -47,15 +50,17 @@ class TweetRepository(private val firestore: FirebaseFirestore) {
         tweetsRef.document(id).delete().addOnSuccessListener { onSuccess() }
     }
 
+    // 🆕 Utiliser addSnapshotListener pour mise à jour temps réel
     fun getAllTweets(onResult: (List<Tweet>) -> Unit) {
         tweetsRef
-            .get()
-            .addOnSuccessListener { snap ->
-                val list = snap.documents.mapNotNull { it.toObject(Tweet::class.java) }
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { snap, error ->
+                if (error != null) {
+                    onResult(emptyList())
+                    return@addSnapshotListener
+                }
+                val list = snap?.toObjects(Tweet::class.java) ?: emptyList()
                 onResult(list)
-            }
-            .addOnFailureListener {
-                onResult(emptyList())
             }
     }
 
@@ -116,11 +121,13 @@ class TweetRepository(private val firestore: FirebaseFirestore) {
 
     fun getSavedTweets(userId: String, onResult: (List<Tweet>) -> Unit) {
         tweetsRef.whereArrayContains("saves", userId)
-            .get()
-            .addOnSuccessListener { snap ->
-                onResult(snap.toObjects(Tweet::class.java))
+            .addSnapshotListener { snap, error ->
+                if (error != null) {
+                    onResult(emptyList())
+                    return@addSnapshotListener
+                }
+                onResult(snap?.toObjects(Tweet::class.java) ?: emptyList())
             }
-            .addOnFailureListener { onResult(emptyList()) }
     }
 
     suspend fun getBookmarkedTweets(userId: String): List<Tweet> {
@@ -133,16 +140,13 @@ class TweetRepository(private val firestore: FirebaseFirestore) {
 
     // ==================== COMMENTAIRES ====================
 
-    // Ajouter un commentaire
     suspend fun addComment(comment: Comment): Result<Unit> {
         return try {
             val tweetRef = tweetsRef.document(comment.tweetId)
             val commentRef = tweetRef.collection("comments").document(comment.id)
 
             firestore.runBatch { batch ->
-                // Ajouter le commentaire
                 batch.set(commentRef, comment)
-                // Incrémenter le compteur de commentaires
                 batch.update(tweetRef, "commentsCount", FieldValue.increment(1))
             }.await()
 
@@ -152,16 +156,13 @@ class TweetRepository(private val firestore: FirebaseFirestore) {
         }
     }
 
-    // Supprimer un commentaire
     suspend fun deleteComment(tweetId: String, commentId: String): Result<Unit> {
         return try {
             val tweetRef = tweetsRef.document(tweetId)
             val commentRef = tweetRef.collection("comments").document(commentId)
 
             firestore.runBatch { batch ->
-                // Supprimer le commentaire
                 batch.delete(commentRef)
-                // Décrémenter le compteur de commentaires
                 batch.update(tweetRef, "commentsCount", FieldValue.increment(-1))
             }.await()
 
@@ -171,7 +172,6 @@ class TweetRepository(private val firestore: FirebaseFirestore) {
         }
     }
 
-    // Observer les commentaires d'un tweet en temps réel
     fun observeComments(tweetId: String): Flow<List<Comment>> = callbackFlow {
         val listener = tweetsRef.document(tweetId)
             .collection("comments")
@@ -187,7 +187,6 @@ class TweetRepository(private val firestore: FirebaseFirestore) {
         awaitClose { listener.remove() }
     }
 
-    // Récupérer les commentaires d'un tweet (une seule fois)
     suspend fun getComments(tweetId: String): List<Comment> {
         return try {
             tweetsRef.document(tweetId)
@@ -200,8 +199,22 @@ class TweetRepository(private val firestore: FirebaseFirestore) {
             emptyList()
         }
     }
+    fun toggleRetweet(tweetId: String, userId: String) {
+        val ref = tweetsRef.document(tweetId)
 
-    // Liker/Unliker un commentaire
+        firestore.runTransaction { tx ->
+            val snap = tx.get(ref)
+            val retweets = snap.get("retweets") as? List<String> ?: emptyList()
+
+            val updatedRetweets = if (userId in retweets) {
+                retweets - userId
+            } else {
+                retweets + userId
+            }
+
+            tx.update(ref, "retweets", updatedRetweets)
+        }
+    }
     fun toggleCommentLike(tweetId: String, commentId: String, userId: String) {
         val ref = tweetsRef.document(tweetId)
             .collection("comments")
