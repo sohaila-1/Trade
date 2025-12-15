@@ -47,7 +47,7 @@ fun UserSearchScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Nouveau Message") },
+                    title = { Text("Rechercher un utilisateur") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
                             Icon(Icons.Default.ArrowBack, "Retour")

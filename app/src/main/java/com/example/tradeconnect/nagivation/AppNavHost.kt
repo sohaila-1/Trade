@@ -13,6 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.tradeconnect.ui.feed.TweetDetailScreen
+
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -234,7 +236,18 @@ fun AppNavHost(
                 userId = userId,
             )
         }
-
+        composable(
+            route = "tweet_detail/{tweetId}",
+            arguments = listOf(navArgument("tweetId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val tweetId = backStackEntry.arguments?.getString("tweetId") ?: return@composable
+            TweetDetailScreen(
+                navController = navController,
+                tweetId = tweetId,
+                viewModel = tweetVM,
+                isDarkMode = isDarkMode
+            )
+        }
         // Liste des followers
         composable(
             route = "followers/{userId}",

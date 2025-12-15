@@ -111,7 +111,6 @@ fun FeedScreen(
                             else viewModel.followUser(uid)
                         },
                         onUserClick = { userId ->
-                            // 🆕 Navigation vers le profil public
                             navController.navigate("user_profile/$userId")
                         }
                     )
@@ -135,8 +134,11 @@ fun FeedScreen(
                             onLike = { id -> viewModel.toggleLike(id) },
                             onSave = { id -> viewModel.toggleSave(id) },
                             onUserClick = { userId ->
-                                // 🆕 Navigation vers le profil public
                                 navController.navigate("user_profile/$userId")
+                            },
+                            onCommentClick = { tweetId ->
+                                // 🆕 Navigation vers les commentaires
+                                navController.navigate("tweet_detail/$tweetId")
                             }
                         )
                         Divider()

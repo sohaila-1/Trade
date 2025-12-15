@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/tradeconnect/ui/feed/TweetItem.kt
 package com.example.tradeconnect.ui.feed
 
 import androidx.compose.foundation.background
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,7 +40,8 @@ fun TweetItem(
     onMoreClick: () -> Unit,
     onLike: (String) -> Unit,
     onSave: (String) -> Unit,
-    onUserClick: ((String) -> Unit)? = null  // 🆕 Callback pour clic sur utilisateur
+    onUserClick: ((String) -> Unit)? = null,
+    onCommentClick: ((String) -> Unit)? = null  // 🆕 Callback pour les commentaires
 ) {
     val bg = if (isDarkMode) Color.Black else Color.White
     val textColor = if (isDarkMode) DarkText else LightText
@@ -81,7 +84,7 @@ fun TweetItem(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // 🆕 Username cliquable
+                    // Username cliquable
                     Text(
                         text = tweet.username,
                         color = textColor,
@@ -109,39 +112,71 @@ fun TweetItem(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // 🆕 Ligne d'actions avec commentaires
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(22.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
+                    // 🆕 COMMENTAIRES 💬
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clickable(enabled = onCommentClick != null) {
+                                onCommentClick?.invoke(tweet.id)
+                            }
+                            .padding(end = 16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.ChatBubbleOutline,
+                            contentDescription = "Commentaires",
+                            tint = secondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = tweet.commentsCount.toString(),
+                            color = secondary,
+                            fontSize = 13.sp
+                        )
+                    }
+
                     // LIKE ❤️
-                    IconButton(onClick = { onLike(tweet.id) }) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clickable { onLike(tweet.id) }
+                            .padding(end = 16.dp)
+                    ) {
                         Icon(
                             imageVector = if (tweet.likes.contains(currentUserId))
                                 Icons.Filled.Favorite
                             else
                                 Icons.Filled.FavoriteBorder,
-                            contentDescription = null,
-                            tint = if (tweet.likes.contains(currentUserId)) Color.Red else textColor
+                            contentDescription = "Like",
+                            tint = if (tweet.likes.contains(currentUserId)) Color.Red else secondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = tweet.likes.size.toString(),
+                            color = secondary,
+                            fontSize = 13.sp
                         )
                     }
 
-                    // Compteur de likes
-                    Text(
-                        text = tweet.likes.size.toString(),
-                        color = secondary,
-                        fontSize = 13.sp,
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
-
                     // SAVE 🔖
-                    IconButton(onClick = { onSave(tweet.id) }) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { onSave(tweet.id) }
+                    ) {
                         Icon(
                             imageVector = if (tweet.saves.contains(currentUserId))
                                 Icons.Filled.Bookmark
                             else
                                 Icons.Filled.BookmarkBorder,
                             contentDescription = "Save",
-                            tint = if (tweet.saves.contains(currentUserId)) TwitterBlue else textColor
+                            tint = if (tweet.saves.contains(currentUserId)) TwitterBlue else secondary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
