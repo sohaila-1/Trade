@@ -54,10 +54,11 @@ class TweetViewModel(
     // -----------------------------------------------------
     fun loadFollowingUsers() {
         val user = authVM.currentUser.value ?: return
-
-        followRepo.getFollowing(user.uid) { list ->
-            followingList.value = list
-            loadFollowingTweets(list)   // 👈 correct
+        viewModelScope.launch {
+            val userList = followRepo.getFollowing(user.uid)
+            val idList = userList.map { it.uid }
+            followingList.value = idList
+            loadFollowingTweets(idList)
         }
     }
 
@@ -139,10 +140,8 @@ class TweetViewModel(
     // 🔥 FOLLOW / UNFOLLOW
     // -----------------------------------------------------
     fun followUser(targetUid: String) {
-        val currentUid = authVM.getCurrentUserId() ?: return
-
         viewModelScope.launch {
-            followRepo.followUser(currentUid, targetUid)
+            followRepo.followUser(targetUid)
             loadFollowingUsers()
             loadAllUsers()
             loadAllTweets()
@@ -150,10 +149,8 @@ class TweetViewModel(
     }
 
     fun unfollowUser(targetUid: String) {
-        val currentUid = authVM.getCurrentUserId() ?: return
-
         viewModelScope.launch {
-            followRepo.unfollowUser(currentUid, targetUid)
+            followRepo.unfollowUser(targetUid)
             loadFollowingUsers()
             loadAllUsers()
             loadAllTweets()
