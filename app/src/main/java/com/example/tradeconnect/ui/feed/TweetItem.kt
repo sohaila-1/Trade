@@ -1,6 +1,7 @@
 package com.example.tradeconnect.ui.feed
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Divider
@@ -36,7 +37,8 @@ fun TweetItem(
     currentUserId: String,
     onMoreClick: () -> Unit,
     onLike: (String) -> Unit,
-    onSave: (String) -> Unit
+    onSave: (String) -> Unit,
+    onUserClick: ((String) -> Unit)? = null  // 🆕 Callback pour clic sur utilisateur
 ) {
     val bg = if (isDarkMode) Color.Black else Color.White
     val textColor = if (isDarkMode) DarkText else LightText
@@ -53,12 +55,15 @@ fun TweetItem(
 
         Row(modifier = Modifier.fillMaxWidth()) {
 
-            // --- Avatar ---
+            // --- Avatar (cliquable) ---
             Box(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(if (isDarkMode) Color(0xFF2F3336) else Color(0xFFD9D9D9)),
+                    .background(if (isDarkMode) Color(0xFF2F3336) else Color(0xFFD9D9D9))
+                    .clickable(enabled = onUserClick != null) {
+                        onUserClick?.invoke(tweet.userId)
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -76,10 +81,14 @@ fun TweetItem(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    // 🆕 Username cliquable
                     Text(
-                        tweet.username,
+                        text = tweet.username,
                         color = textColor,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.clickable(enabled = onUserClick != null) {
+                            onUserClick?.invoke(tweet.userId)
+                        }
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
@@ -123,7 +132,6 @@ fun TweetItem(
                         fontSize = 13.sp,
                         modifier = Modifier.padding(start = 4.dp)
                     )
-
 
                     // SAVE 🔖
                     IconButton(onClick = { onSave(tweet.id) }) {

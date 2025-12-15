@@ -65,7 +65,6 @@ fun FeedScreen(
                     }
                 }
             )
-
         }
     ) {
 
@@ -110,6 +109,10 @@ fun FeedScreen(
                         onToggleFollow = { uid, isFollowing ->
                             if (isFollowing) viewModel.unfollowUser(uid)
                             else viewModel.followUser(uid)
+                        },
+                        onUserClick = { userId ->
+                            // 🆕 Navigation vers le profil public
+                            navController.navigate("user_profile/$userId")
                         }
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -130,13 +133,15 @@ fun FeedScreen(
                                 showMoreDialog = true
                             },
                             onLike = { id -> viewModel.toggleLike(id) },
-                            onSave = { id -> viewModel.toggleSave(id) }
+                            onSave = { id -> viewModel.toggleSave(id) },
+                            onUserClick = { userId ->
+                                // 🆕 Navigation vers le profil public
+                                navController.navigate("user_profile/$userId")
+                            }
                         )
                         Divider()
                     }
                 }
-
-
             }
         }
     }

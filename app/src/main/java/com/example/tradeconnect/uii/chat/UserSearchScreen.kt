@@ -1,39 +1,29 @@
 package com.example.tradeconnect.ui.chat
 
-// Android imports
-import android.graphics.BitmapFactory
-import android.util.Base64
-
-// Compose imports
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-
-// Navigation
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-
-// Coil for image loading
 import coil.compose.AsyncImage
-
-// Your models
 import com.example.tradeconnect.data.model.User
-
-// Utils
+import com.example.tradeconnect.ui.theme.TBlue
 import com.example.tradeconnect.util.Base64ProfileImage
 import com.example.tradeconnect.util.DefaultAvatar
 import com.example.tradeconnect.viewmodel.UserSearchViewModel
@@ -48,19 +38,19 @@ fun UserSearchScreen(
     val searchResults by viewModel.searchResults.collectAsState()
 
     val colorScheme = if (isDarkMode) {
-        darkColorScheme()  // Or your custom dark scheme
+        darkColorScheme()
     } else {
-        lightColorScheme()  // Or your custom light scheme
+        lightColorScheme()
     }
-    MaterialTheme(colorScheme = colorScheme)
-    {
+
+    MaterialTheme(colorScheme = colorScheme) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("New Message") },
+                    title = { Text("Nouveau Message") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(Icons.Default.ArrowBack, "Back")
+                            Icon(Icons.Default.ArrowBack, "Retour")
                         }
                     }
                 )
@@ -71,21 +61,22 @@ fun UserSearchScreen(
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                // Search bar
+                // Barre de recherche
                 OutlinedTextField(
                     value = viewModel.searchQuery,
                     onValueChange = { viewModel.updateSearchQuery(it) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    placeholder = { Text("Search users...") },
+                    placeholder = { Text("Rechercher des utilisateurs...") },
                     leadingIcon = {
-                        Icon(Icons.Default.Search, "Search")
+                        Icon(Icons.Default.Search, "Rechercher")
                     },
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(24.dp)
                 )
 
-                // Loading indicator
+                // Indicateur de chargement
                 if (viewModel.isLoading) {
                     Box(
                         modifier = Modifier
@@ -93,24 +84,28 @@ fun UserSearchScreen(
                             .padding(16.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = TBlue)
                     }
                 }
 
-                // Search results
+                // Résultats de recherche
                 LazyColumn(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(searchResults) { user ->
-                        UserItem(
+                        UserSearchItem(
                             user = user,
-                            onClick = {
+                            onProfileClick = {
+                                // 🆕 Navigation vers le profil public
+                                navController.navigate("user_profile/${user.uid}")
+                            },
+                            onMessageClick = {
                                 navController.navigate("chat/${user.uid}/${user.username}")
                             }
                         )
                     }
 
-                    // Empty state
+                    // État vide
                     if (!viewModel.isLoading && searchResults.isEmpty() && viewModel.searchQuery.isNotBlank()) {
                         item {
                             Box(
@@ -119,11 +114,15 @@ fun UserSearchScreen(
                                     .padding(32.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "No users found",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("😕", fontSize = 48.sp)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Aucun utilisateur trouvé",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                     }
@@ -134,62 +133,85 @@ fun UserSearchScreen(
 }
 
 @Composable
-fun UserItem(
+fun UserSearchItem(
     user: User,
-    onClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onMessageClick: () -> Unit
 ) {
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clickable(onClick = onProfileClick),  // Clic sur la card = profil
+        shape = RoundedCornerShape(12.dp)
     ) {
-        // Profile image - handles both base64 and URL
-        if (user.profileImageUrl.isNotEmpty()) {
-            if (user.profileImageUrl.startsWith("data:image")) {
-                // Handle base64 image
-                Base64ProfileImage(
-                    base64String = user.profileImageUrl,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Photo de profil
+            if (user.profileImageUrl.isNotEmpty()) {
+                if (user.profileImageUrl.startsWith("data:image")) {
+                    Base64ProfileImage(
+                        base64String = user.profileImageUrl,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
+                    AsyncImage(
+                        model = user.profileImageUrl,
+                        contentDescription = "Profile",
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
             } else {
-                // Handle regular URL
-                AsyncImage(
-                    model = user.profileImageUrl,
-                    contentDescription = "Profile",
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
+                DefaultAvatar(
+                    letter = user.username.firstOrNull()?.uppercase() ?: "?",
+                    modifier = Modifier.size(50.dp)
                 )
             }
-        } else {
-            // Default avatar with first letter
-            DefaultAvatar(
-                letter = user.username.firstOrNull()?.uppercase() ?: "?",
-                modifier = Modifier.size(48.dp)
-            )
-        }
 
-        Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
-        // User info
-        Column {
-            Text(
-                text = user.username,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = user.email,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            // Infos utilisateur
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = user.username,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+                Text(
+                    text = user.email,
+                    color = Color.Gray,
+                    fontSize = 14.sp,
+                    maxLines = 1
+                )
+                // Statut en ligne
+                if (user.isOnline) {
+                    Text(
+                        text = "🟢 En ligne",
+                        fontSize = 12.sp,
+                        color = Color(0xFF4CAF50)
+                    )
+                }
+            }
+
+            // Bouton Message
+            IconButton(
+                onClick = onMessageClick
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Email,
+                    contentDescription = "Message",
+                    tint = TBlue
+                )
+            }
         }
     }
 }
-
-// Base64ProfileImage and DefaultAvatar are now imported from util package

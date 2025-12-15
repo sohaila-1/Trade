@@ -2,19 +2,18 @@ package com.example.tradeconnect.ui.components
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
 import com.example.tradeconnect.data.model.User
 import com.example.tradeconnect.ui.theme.LightText
@@ -30,7 +29,8 @@ fun UsersToFollowList(
     users: List<User>,
     followingIds: List<String>,
     getLastTweet: (String) -> String,
-    onToggleFollow: (String, Boolean) -> Unit
+    onToggleFollow: (String, Boolean) -> Unit,
+    onUserClick: ((String) -> Unit)? = null  // 🆕 Callback pour clic sur utilisateur
 ) {
     LazyColumn(
         modifier = Modifier
@@ -42,7 +42,8 @@ fun UsersToFollowList(
                 user = user,
                 isFollowing = followingIds.contains(user.uid),
                 lastTweet = getLastTweet(user.uid),
-                onToggleFollow = onToggleFollow
+                onToggleFollow = onToggleFollow,
+                onUserClick = onUserClick  // 🆕
             )
         }
     }
@@ -53,13 +54,17 @@ fun UserFollowItem(
     user: User,
     isFollowing: Boolean,
     lastTweet: String,
-    onToggleFollow: (String, Boolean) -> Unit
+    onToggleFollow: (String, Boolean) -> Unit,
+    onUserClick: ((String) -> Unit)? = null  // 🆕
 ) {
     val isDark = isSystemInDarkTheme()
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(enabled = onUserClick != null) {
+                onUserClick?.invoke(user.uid)
+            }
             .padding(vertical = 10.dp, horizontal = 18.dp)
     ) {
         Row(
@@ -68,7 +73,10 @@ fun UserFollowItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
 
                 Avatar(username = user.username)
 
@@ -84,6 +92,14 @@ fun UserFollowItem(
                         "@${user.uid.take(7)}",
                         color = if (isDark) LightGrayDark else Color.Gray
                     )
+                    // 🆕 Statut en ligne
+                    if (user.isOnline) {
+                        Text(
+                            text = "🟢 En ligne",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF4CAF50)
+                        )
+                    }
                 }
             }
 
@@ -99,7 +115,8 @@ fun UserFollowItem(
                 text = lastTweet,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = if (isDark) Color.White else Color.Black,
-                modifier = Modifier.padding(start = 56.dp)
+                modifier = Modifier.padding(start = 56.dp),
+                maxLines = 2
             )
         }
 

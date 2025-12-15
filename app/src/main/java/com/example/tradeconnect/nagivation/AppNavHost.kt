@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/tradeconnect/nagivation/AppNavHost.kt
 package com.example.tradeconnect.nagivation
 
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,10 @@ import com.example.tradeconnect.ui.feed.BookmarkScreen
 import com.example.tradeconnect.ui.feed.CreateTweetScreen
 import com.example.tradeconnect.ui.feed.EditTweetScreen
 import com.example.tradeconnect.ui.feed.FeedScreen
+import com.example.tradeconnect.ui.follow.DiscoverUsersScreen
+import com.example.tradeconnect.ui.follow.FollowListScreen
+import com.example.tradeconnect.ui.follow.FollowListType
+import com.example.tradeconnect.ui.follow.UserPublicProfileScreen
 import com.example.tradeconnect.uii.home.HomeScreen
 import com.example.tradeconnect.uii.login.LoginScreen
 import com.example.tradeconnect.uii.signup.SignUpScreen
@@ -37,6 +42,7 @@ import com.example.tradeconnect.uii.user.UserProfileScreen
 import com.example.tradeconnect.util.NetworkObserver
 import com.example.tradeconnect.viewmodel.AuthViewModel
 import com.example.tradeconnect.viewmodel.ChatListViewModel
+import com.example.tradeconnect.viewmodel.FollowViewModel
 import com.example.tradeconnect.viewmodel.ProfileViewModel
 import com.example.tradeconnect.viewmodel.TweetViewModel
 import com.example.tradeconnect.viewmodel.UserSearchViewModel
@@ -57,7 +63,7 @@ fun AppNavHost(
     // INIT REPOSITORIES
     // ------------------------------
     val tweetRepo = TweetRepository(
-        firestore = FirebaseFirestore.getInstance()   // ✅ correction
+        firestore = FirebaseFirestore.getInstance()
     )
     val followRepo = FollowRepository()
     val userRepo = UserRepository()
@@ -77,6 +83,13 @@ fun AppNavHost(
         )
     )
 
+    // ------------------------------
+    // INIT FOLLOW VIEWMODEL
+    // ------------------------------
+    val followVM: FollowViewModel = viewModel(
+        factory = FollowViewModel.Factory(followRepo)
+    )
+
     var isDarkMode by remember { mutableStateOf(false) }
 
     // ------------------------------
@@ -86,6 +99,8 @@ fun AppNavHost(
         navController = navController,
         startDestination = startDestination
     ) {
+
+        // ==================== AUTH ====================
 
         // LOGIN
         composable("login") {
@@ -97,10 +112,7 @@ fun AppNavHost(
             SignUpScreen(navController, authVM)
         }
 
-        // HOME
-//        composable("home") {
-//            HomeScreen(navController)
-//        }
+        // ==================== CHAT ====================
 
         composable("chat") {
             val viewModel: ChatListViewModel = viewModel(
@@ -113,7 +125,7 @@ fun AppNavHost(
             )
         }
 
-        //User search screen (accessed from chat list)
+        // User search screen (accessed from chat list)
         composable("user_search") {
             val viewModel: UserSearchViewModel = viewModel(
                 factory = UserSearchViewModel.Factory(messageRepository)
@@ -143,20 +155,22 @@ fun AppNavHost(
             )
         }
 
+        // ==================== PROFILE ====================
+
+        // Mon profil (édition)
         composable("profile") {
             val profileViewModel: ProfileViewModel = viewModel(
                 factory = ProfileViewModel.Factory(profileRepo, authRepo)
             )
             UserProfileScreen(
-                navController, profileViewModel, isDarkMode)
+                navController = navController,
+                viewModel = profileViewModel,
+                isDarkMode = isDarkMode
+            )
         }
 
-//         CHAT
-//        composable("chat") {
-//            ChatScreen(navController)
-//        }
+        // ==================== FEED ====================
 
-        // FEED
         composable("feed") {
             FeedScreen(
                 navController = navController,
@@ -185,30 +199,76 @@ fun AppNavHost(
             )
         }
 
-        // PROFILE //this is souhaia name for profilescreen
-//        composable("profile") {
-//            Box(
-//                modifier = Modifier.fillMaxSize(),
-//                contentAlignment = Alignment.Center
-//            ) { Text("Profile screen") }
-//        }
+        // BOOKMARKS
+        composable(route = "bookmarks") {
+            BookmarkScreen(
+                navController = navController,
+                viewModel = tweetVM,
+                isDarkMode = isDarkMode,
+                onToggleTheme = { isDarkMode = !isDarkMode }
+            )
+        }
 
-        // SETTINGS
+        // ==================== FOLLOW SYSTEM ====================
+
+        // Profil public d'un utilisateur
+        composable(
+            route = "user_profile/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+            UserPublicProfileScreen(
+                navController = navController,
+                followViewModel = followVM,
+                userId = userId,
+                isDarkMode = isDarkMode
+            )
+        }
+
+        // Liste des followers
+        composable(
+            route = "followers/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+            FollowListScreen(
+                navController = navController,
+                followViewModel = followVM,
+                userId = userId,
+                listType = FollowListType.FOLLOWERS,
+                isDarkMode = isDarkMode
+            )
+        }
+
+        // Liste des abonnements (following)
+        composable(
+            route = "following/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+            FollowListScreen(
+                navController = navController,
+                followViewModel = followVM,
+                userId = userId,
+                listType = FollowListType.FOLLOWING,
+                isDarkMode = isDarkMode
+            )
+        }
+// Découvrir des utilisateurs
+        composable("discover") {
+            DiscoverUsersScreen(
+                navController = navController,
+                followViewModel = followVM,
+                isDarkMode = isDarkMode
+            )
+        }
+        // ==================== SETTINGS ====================
+
         composable("settings") {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) { Text("Settings screen") }
-        }
-
-        // BOOKMARKS
-        composable(route = "bookmarks") {
-            BookmarkScreen(
-                navController = navController,
-                viewModel = tweetVM,                // ✅ nom correct
-                isDarkMode = isDarkMode,
-                onToggleTheme = { isDarkMode = !isDarkMode }   // ✅ fonction locale
-            )
         }
     }
 }
