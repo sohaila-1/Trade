@@ -42,17 +42,24 @@ fun FeedScreen(
         viewModel.loadFollowingUsers()
         viewModel.loadAllUsers()
         viewModel.loadAllTweets()
+        viewModel.loadCurrentUserProfile()
     }
 
     var selectedTab by remember { mutableStateOf(0) }
 
-    val myTweets = viewModel.myTweets.value
-    val allTweets = viewModel.allTweets.value
-
-    // "Pour vous" affiche tous les tweets
-    val tweetsToShow = allTweets
-
     val currentUserId = viewModel.authVM.getCurrentUserId() ?: ""
+
+    // 🆕 CORRECTION : Récupérer les tweets
+    val myTweets = viewModel.myTweets.value
+    val followingTweets = viewModel.followingTweets.value
+
+    // "Pour vous" = Mes tweets + Tweets des personnes que je suis
+    val tweetsToShow = (myTweets + followingTweets)
+        .distinctBy { it.id }
+        .sortedByDescending { it.timestamp }
+
+    // Récupérer le profil complet
+    val currentUserProfile by viewModel.currentUserProfile.collectAsState()
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -66,7 +73,6 @@ fun FeedScreen(
     val textColor = if (isDarkMode) DarkText else LightText
     val surfaceColor = if (isDarkMode) DarkSurface else LightSurface
 
-    // Afficher le bouton "scroll to top"
     val showScrollToTop by remember {
         derivedStateOf { listState.firstVisibleItemIndex > 3 }
     }
@@ -82,14 +88,14 @@ fun FeedScreen(
                     navController.navigate("login") {
                         popUpTo("feed") { inclusive = true }
                     }
-                }
+                },
+                currentUser = currentUserProfile
             )
         }
     ) {
         Scaffold(
             containerColor = bgColor,
             floatingActionButton = {
-                // Afficher le FAB seulement sur l'onglet "Pour vous"
                 if (selectedTab == 0) {
                     Column(
                         horizontalAlignment = Alignment.End,
@@ -147,7 +153,7 @@ fun FeedScreen(
 
                 // Contenu selon l'onglet
                 when (selectedTab) {
-                    // Onglet "Pour vous" - Tous les tweets
+                    // Onglet "Pour vous" - Mes tweets + Tweets des abonnements
                     0 -> {
                         LazyColumn(
                             state = listState,
@@ -162,7 +168,7 @@ fun FeedScreen(
                                         isDarkMode = isDarkMode,
                                         emoji = "🐦",
                                         title = "Aucun tweet pour le moment",
-                                        subtitle = "Soyez le premier à tweeter !"
+                                        subtitle = "Suivez des personnes pour voir leurs tweets ici !"
                                     )
                                 }
                             }

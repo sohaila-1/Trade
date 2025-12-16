@@ -1,27 +1,33 @@
 package com.example.tradeconnect.ui.chat
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.tradeconnect.data.model.ChatPreview
 import com.example.tradeconnect.ui.feed.components.BottomNavBar
+import com.example.tradeconnect.ui.theme.*
 import com.example.tradeconnect.util.Base64ProfileImage
 import com.example.tradeconnect.util.DefaultAvatar
 import com.example.tradeconnect.viewmodel.ChatListViewModel
@@ -39,103 +45,200 @@ fun ChatListScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
 
+    // Couleurs
+    val bgColor = if (isDarkMode) DarkBackground else LightBackground
+    val textColor = if (isDarkMode) DarkText else LightText
+    val secondaryColor = if (isDarkMode) DarkGrayText else LightGrayText
+    val dividerColor = if (isDarkMode) DarkDivider else LightDivider
+    val cardColor = if (isDarkMode) DarkSurface else LightSurface
+
     Scaffold(
+        containerColor = bgColor,
         topBar = {
-            TopAppBar(
-                title = { Text("Messages") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    // Refresh button
-                    IconButton(
-                        onClick = { viewModel.refresh() },
-                        enabled = !isSyncing
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = bgColor,
+                shadowElevation = 2.dp
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        if (isSyncing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 2.dp
+                        // Bouton retour
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Retour",
+                                tint = textColor
                             )
-                        } else {
-                            Icon(Icons.Default.Refresh, "Refresh")
+                        }
+
+                        // Titre
+                        Text(
+                            text = "Messages",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textColor
+                        )
+
+                        // Actions
+                        Row {
+                            // Refresh button
+                            IconButton(
+                                onClick = { viewModel.refresh() },
+                                enabled = !isSyncing
+                            ) {
+                                if (isSyncing) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(22.dp),
+                                        strokeWidth = 2.dp,
+                                        color = TwitterBlue
+                                    )
+                                } else {
+                                    Icon(
+                                        Icons.Default.Refresh,
+                                        "Actualiser",
+                                        tint = textColor
+                                    )
+                                }
+                            }
+
+                            // Search button
+                            IconButton(onClick = { navController.navigate("user_search") }) {
+                                Icon(
+                                    Icons.Outlined.Search,
+                                    "Rechercher",
+                                    tint = textColor
+                                )
+                            }
                         }
                     }
 
-                    IconButton(onClick = { navController.navigate("user_search") }) {
-                        Icon(Icons.Default.Search, "Search users")
-                    }
+                    HorizontalDivider(thickness = 0.5.dp, color = dividerColor)
                 }
-            )
+            }
         },
         bottomBar = {
             BottomNavBar(navController = navController, isDarkMode = isDarkMode)
         }
     ) { padding ->
         when {
+            // Loading
             isLoading && chats.isEmpty() -> {
-                // Initial loading state
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding),
+                        .padding(padding)
+                        .background(bgColor),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = TwitterBlue)
                         Text(
-                            text = "Loading conversations...",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "Chargement des conversations...",
+                            color = secondaryColor,
+                            fontSize = 14.sp
                         )
                     }
                 }
             }
 
+            // Empty state
             chats.isEmpty() && !isLoading -> {
-                // Empty state
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding),
+                        .padding(padding)
+                        .background(bgColor),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.padding(32.dp)
                     ) {
-                        Text(
-                            text = "No messages yet",
-                            style = MaterialTheme.typography.titleMedium,
+                        // Icône
+                        Icon(
+                            Icons.Outlined.Email,
+                            contentDescription = null,
+                            tint = TwitterBlue,
+                            modifier = Modifier.size(80.dp)
                         )
-                        Button(onClick = { navController.navigate("user_search") }) {
-                            Icon(Icons.Default.Search, contentDescription = null)
+
+                        Text(
+                            text = "Aucun message",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textColor
+                        )
+
+                        Text(
+                            text = "Commencez une conversation avec quelqu'un",
+                            fontSize = 14.sp,
+                            color = secondaryColor
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Button(
+                            onClick = { navController.navigate("user_search") },
+                            shape = RoundedCornerShape(24.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = TwitterBlue,
+                                contentColor = Color.White
+                            ),
+                            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                        ) {
+                            Icon(
+                                Icons.Outlined.Search,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Start a conversation")
+                            Text(
+                                "Nouvelle conversation",
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
             }
 
+            // Chat list
             else -> {
-                // Chat list
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
+                        .background(bgColor)
                 ) {
                     items(chats) { chat ->
                         ChatPreviewItem(
                             chat = chat,
+                            isDarkMode = isDarkMode,
                             onClick = {
                                 navController.navigate("chat/${chat.user.uid}/${chat.user.username}")
                             }
                         )
-                        HorizontalDivider()
+                        HorizontalDivider(
+                            thickness = 0.5.dp,
+                            color = dividerColor,
+                            modifier = Modifier.padding(start = 84.dp)
+                        )
+                    }
+
+                    // Espace en bas
+                    item {
+                        Spacer(modifier = Modifier.height(80.dp))
                     }
                 }
             }
@@ -143,30 +246,39 @@ fun ChatListScreen(
     }
 }
 
-
 @Composable
 fun ChatPreviewItem(
     chat: ChatPreview,
+    isDarkMode: Boolean,
     onClick: () -> Unit
 ) {
+    val textColor = if (isDarkMode) DarkText else LightText
+    val secondaryColor = if (isDarkMode) DarkGrayText else LightGrayText
+    val bgColor = if (isDarkMode) DarkBackground else LightBackground
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(bgColor)
             .clickable(onClick = onClick)
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Profile image with unread badge
         Box {
-            if (chat.user.profileImageUrl.isNotEmpty()) {
-                if (chat.user.profileImageUrl.startsWith("data:image")) {
+            when {
+                chat.user.profileImageUrl.startsWith("data:image") ||
+                        chat.user.profileImageUrl.length > 200 -> {
                     Base64ProfileImage(
                         base64String = chat.user.profileImageUrl,
                         modifier = Modifier
                             .size(56.dp)
                             .clip(CircleShape)
                     )
-                } else {
+                }
+                chat.user.profileImageUrl.isNotEmpty() &&
+                        (chat.user.profileImageUrl.startsWith("http") ||
+                                chat.user.profileImageUrl.startsWith("https")) -> {
                     AsyncImage(
                         model = chat.user.profileImageUrl,
                         contentDescription = "Profile",
@@ -176,10 +288,25 @@ fun ChatPreviewItem(
                         contentScale = ContentScale.Crop
                     )
                 }
-            } else {
-                DefaultAvatar(
-                    letter = chat.user.username.firstOrNull()?.uppercase() ?: "?",
-                    modifier = Modifier.size(56.dp)
+                else -> {
+                    DefaultAvatar(
+                        letter = chat.user.username.firstOrNull()?.uppercase() ?: "?",
+                        modifier = Modifier.size(56.dp)
+                    )
+                }
+            }
+
+            // Online indicator
+            if (chat.user.isOnline) {
+                Box(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clip(CircleShape)
+                        .background(bgColor)
+                        .padding(2.dp)
+                        .clip(CircleShape)
+                        .background(OnlineGreen)
+                        .align(Alignment.BottomEnd)
                 )
             }
 
@@ -190,13 +317,14 @@ fun ChatPreviewItem(
                         .align(Alignment.TopEnd)
                         .offset(x = 4.dp, y = (-4).dp),
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.error
+                    color = TwitterBlue
                 ) {
                     Text(
                         text = if (chat.unreadCount > 99) "99+" else chat.unreadCount.toString(),
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onError
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                 }
             }
@@ -213,14 +341,16 @@ fun ChatPreviewItem(
             ) {
                 Text(
                     text = chat.user.username,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = if (chat.unreadCount > 0) FontWeight.Bold else FontWeight.Medium
+                    fontSize = 16.sp,
+                    fontWeight = if (chat.unreadCount > 0) FontWeight.Bold else FontWeight.Medium,
+                    color = textColor
                 )
 
                 if (chat.lastMessageTime > 0) {
                     Text(
                         text = formatChatTime(chat.lastMessageTime),
-                        style = MaterialTheme.typography.bodySmall,
+                        fontSize = 13.sp,
+                        color = if (chat.unreadCount > 0) TwitterBlue else secondaryColor
                     )
                 }
             }
@@ -228,13 +358,9 @@ fun ChatPreviewItem(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = chat.lastMessage.ifEmpty { "No messages yet" },
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (chat.unreadCount > 0) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
+                text = chat.lastMessage.ifEmpty { "Aucun message" },
+                fontSize = 14.sp,
+                color = if (chat.unreadCount > 0) textColor else secondaryColor,
                 fontWeight = if (chat.unreadCount > 0) FontWeight.Medium else FontWeight.Normal,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -248,11 +374,11 @@ private fun formatChatTime(timestamp: Long): String {
     val diff = now - timestamp
 
     return when {
-        diff < 60_000 -> "Now" // Less than 1 minute
-        diff < 3600_000 -> "${diff / 60_000}m" // Less than 1 hour
-        diff < 86400_000 -> SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(timestamp)) // Today
-        diff < 172800_000 -> "Yesterday" // Yesterday
-        diff < 604800_000 -> SimpleDateFormat("EEE", Locale.getDefault()).format(Date(timestamp)) // This week
-        else -> SimpleDateFormat("dd/MM", Locale.getDefault()).format(Date(timestamp)) // Older
+        diff < 60_000 -> "À l'instant"
+        diff < 3600_000 -> "${diff / 60_000} min"
+        diff < 86400_000 -> SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(timestamp))
+        diff < 172800_000 -> "Hier"
+        diff < 604800_000 -> SimpleDateFormat("EEE", Locale.FRANCE).format(Date(timestamp))
+        else -> SimpleDateFormat("dd/MM", Locale.getDefault()).format(Date(timestamp))
     }
 }

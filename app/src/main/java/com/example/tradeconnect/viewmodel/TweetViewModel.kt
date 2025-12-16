@@ -31,6 +31,12 @@ class TweetViewModel(
     val allTweets = mutableStateOf<List<Tweet>>(emptyList())
     val allUsers = mutableStateOf<List<User>>(emptyList())
 
+    // ==================== PROFIL UTILISATEUR ====================
+
+    // 🆕 Profil complet de l'utilisateur connecté (avec followers/following)
+    private val _currentUserProfile = MutableStateFlow<User?>(null)
+    val currentUserProfile: StateFlow<User?> = _currentUserProfile.asStateFlow()
+
     // ==================== COMMENTAIRES ====================
 
     private val _selectedTweet = MutableStateFlow<Tweet?>(null)
@@ -49,6 +55,21 @@ class TweetViewModel(
     val commentError: StateFlow<String?> = _commentError.asStateFlow()
 
     private var commentsJob: Job? = null
+    private var userProfileJob: Job? = null
+
+    // -----------------------------------------------------
+    // 🆕 CHARGER LE PROFIL COMPLET DE L'UTILISATEUR CONNECTÉ
+    // -----------------------------------------------------
+    fun loadCurrentUserProfile() {
+        val userId = authVM.getCurrentUserId() ?: return
+
+        userProfileJob?.cancel()
+        userProfileJob = viewModelScope.launch {
+            followRepo.observeUser(userId).collect { user ->
+                _currentUserProfile.value = user
+            }
+        }
+    }
 
     // -----------------------------------------------------
     // 🔥 CHARGER MES TWEETS
@@ -161,6 +182,7 @@ class TweetViewModel(
             followRepo.followUser(targetUid)
             loadFollowingUsers()
             loadAllUsers()
+            loadCurrentUserProfile()  // 🆕 Recharger le profil pour mettre à jour les compteurs
         }
     }
 
@@ -169,6 +191,7 @@ class TweetViewModel(
             followRepo.unfollowUser(targetUid)
             loadFollowingUsers()
             loadAllUsers()
+            loadCurrentUserProfile()  // 🆕 Recharger le profil pour mettre à jour les compteurs
         }
     }
 
@@ -250,6 +273,43 @@ class TweetViewModel(
 
         // Mettre à jour Firebase en arrière-plan
         tweetRepo.toggleSave(tweetId, userId)
+    }
+
+    // -----------------------------------------------------
+    // 🔥 RETWEET (avec mise à jour optimiste)
+    // -----------------------------------------------------
+    fun toggleRetweet(tweetId: String) {
+        val userId = authVM.getCurrentUserId() ?: return
+
+        // 🚀 Mise à jour optimiste IMMÉDIATE
+        allTweets.value = allTweets.value.map { tweet ->
+            if (tweet.id == tweetId) {
+                val newRetweets = if (tweet.retweets.contains(userId)) {
+                    tweet.retweets - userId
+                } else {
+                    tweet.retweets + userId
+                }
+                tweet.copy(retweets = newRetweets)
+            } else {
+                tweet
+            }
+        }
+
+        myTweets.value = myTweets.value.map { tweet ->
+            if (tweet.id == tweetId) {
+                val newRetweets = if (tweet.retweets.contains(userId)) {
+                    tweet.retweets - userId
+                } else {
+                    tweet.retweets + userId
+                }
+                tweet.copy(retweets = newRetweets)
+            } else {
+                tweet
+            }
+        }
+
+        // Mettre à jour Firebase en arrière-plan
+        tweetRepo.toggleRetweet(tweetId, userId)
     }
 
     val savedTweets = mutableStateOf<List<Tweet>>(emptyList())
@@ -357,39 +417,6 @@ class TweetViewModel(
 
     fun clearCommentError() {
         _commentError.value = null
-    }
-    fun toggleRetweet(tweetId: String) {
-        val userId = authVM.getCurrentUserId() ?: return
-
-        // 🚀 Mise à jour optimiste IMMÉDIATE
-        allTweets.value = allTweets.value.map { tweet ->
-            if (tweet.id == tweetId) {
-                val newRetweets = if (tweet.retweets.contains(userId)) {
-                    tweet.retweets - userId
-                } else {
-                    tweet.retweets + userId
-                }
-                tweet.copy(retweets = newRetweets)
-            } else {
-                tweet
-            }
-        }
-
-        myTweets.value = myTweets.value.map { tweet ->
-            if (tweet.id == tweetId) {
-                val newRetweets = if (tweet.retweets.contains(userId)) {
-                    tweet.retweets - userId
-                } else {
-                    tweet.retweets + userId
-                }
-                tweet.copy(retweets = newRetweets)
-            } else {
-                tweet
-            }
-        }
-
-        // Mettre à jour Firebase en arrière-plan
-        tweetRepo.toggleRetweet(tweetId, userId)
     }
 
     // -----------------------------------------------------

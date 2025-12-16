@@ -169,6 +169,8 @@ fun AppNavHost(
                 navController = navController,
                 followViewModel = followVM,
                 userId = userId,
+                isDarkMode = isDarkMode,
+                tweetViewModel = tweetVM
             )
         }
 
@@ -197,7 +199,8 @@ fun AppNavHost(
 
         // CREATE TWEET
         composable("createTweet") {
-            CreateTweetScreen(navController, tweetVM)
+            CreateTweetScreen(navController, tweetVM,
+                isDarkMode = isDarkMode )
         }
 
         // EDIT TWEET
@@ -236,6 +239,7 @@ fun AppNavHost(
                 navController = navController,
                 followViewModel = followVM,
                 userId = userId,
+                tweetViewModel = tweetVM
             )
         }
         composable(

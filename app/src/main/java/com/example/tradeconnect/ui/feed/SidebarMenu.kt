@@ -9,7 +9,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -18,24 +17,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.example.tradeconnect.data.model.User
 import com.example.tradeconnect.ui.theme.*
+import com.example.tradeconnect.util.Base64ProfileImage
+import com.example.tradeconnect.util.DefaultAvatar
 
 @Composable
 fun SidebarMenu(
     navController: NavController,
     isDarkMode: Boolean,
     onToggleTheme: () -> Unit,
-    onLogoutClick: () -> Unit
+    onLogoutClick: () -> Unit,
+    currentUser: User? = null
 ) {
     val bgColor = if (isDarkMode) DarkBackground else LightBackground
-    val surfaceColor = if (isDarkMode) DarkSurface else LightSurface
     val textColor = if (isDarkMode) DarkText else LightText
     val secondaryColor = if (isDarkMode) DarkGrayText else LightGrayText
     val dividerColor = if (isDarkMode) DarkDivider else LightDivider
+
+    // Récupérer les données de l'utilisateur
+    val username = currentUser?.username ?: "Utilisateur"
+    val email = currentUser?.email ?: "@utilisateur"
+    val followersCount = currentUser?.followersCount ?: 0
+    val followingCount = currentUser?.followingCount ?: 0
+    val profileImageUrl = currentUser?.profileImageUrl ?: ""
+    val profileInitial = username.firstOrNull()?.uppercase() ?: "?"
 
     ModalDrawerSheet(
         drawerContainerColor = bgColor,
@@ -52,35 +64,60 @@ fun SidebarMenu(
                     .fillMaxWidth()
                     .padding(20.dp)
             ) {
-                // Avatar
+                // 🆕 Avatar avec photo de profil
                 Box(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(CircleShape)
-                        .background(TwitterBlue)
                         .clickable { navController.navigate("profile") },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Person,
-                        contentDescription = "Profile",
-                        tint = Color.White,
-                        modifier = Modifier.size(32.dp)
-                    )
+                    when {
+                        // Si c'est une image base64
+                        profileImageUrl.startsWith("data:image") ||
+                                profileImageUrl.length > 200 -> {
+                            Base64ProfileImage(
+                                base64String = profileImageUrl,
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(CircleShape)
+                            )
+                        }
+                        // Si c'est une URL normale
+                        profileImageUrl.isNotEmpty() &&
+                                (profileImageUrl.startsWith("http") || profileImageUrl.startsWith("https")) -> {
+                            AsyncImage(
+                                model = profileImageUrl,
+                                contentDescription = "Photo de profil",
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        // Sinon afficher l'avatar par défaut
+                        else -> {
+                            DefaultAvatar(
+                                letter = profileInitial,
+                                modifier = Modifier.size(56.dp)
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Nom et username
+                // Nom
                 Text(
-                    text = "Mon Profil",
+                    text = username,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = textColor
                 )
 
+                // Email
                 Text(
-                    text = "@utilisateur",
+                    text = email,
                     fontSize = 14.sp,
                     color = secondaryColor
                 )
@@ -92,19 +129,27 @@ fun SidebarMenu(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     StatItem(
-                        count = "0",
+                        count = followingCount.toString(),
                         label = "Abonnements",
                         textColor = textColor,
                         secondaryColor = secondaryColor,
-                        onClick = { /* TODO */ }
+                        onClick = {
+                            currentUser?.uid?.let { uid ->
+                                navController.navigate("following/$uid")
+                            }
+                        }
                     )
 
                     StatItem(
-                        count = "0",
+                        count = followersCount.toString(),
                         label = "Followers",
                         textColor = textColor,
                         secondaryColor = secondaryColor,
-                        onClick = { /* TODO */ }
+                        onClick = {
+                            currentUser?.uid?.let { uid ->
+                                navController.navigate("followers/$uid")
+                            }
+                        }
                     )
                 }
             }
@@ -204,7 +249,6 @@ fun SidebarMenu(
                 )
             }
 
-            // Spacer pour pousser le logout en bas
             Spacer(modifier = Modifier.weight(1f))
 
             HorizontalDivider(color = dividerColor, thickness = 0.5.dp)
@@ -271,7 +315,6 @@ private fun MenuItem(
             modifier = Modifier.weight(1f)
         )
 
-        // Badge optionnel (pour notifications, etc.)
         badge?.let {
             Box(
                 modifier = Modifier
