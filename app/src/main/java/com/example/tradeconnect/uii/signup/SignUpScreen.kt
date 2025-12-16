@@ -27,9 +27,13 @@ import com.example.tradeconnect.viewmodel.AuthViewModel
 
 @Composable
 fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
+
+    var localRememberMe by remember {mutableStateOf(false)}
+
     // Set default rememberMe = true on sign up screen and clear errors
     LaunchedEffect(Unit) {
         viewModel.updateRememberMe(false)
+        viewModel.clearError()
     }
 
     // Make the screen scrollable for smaller devices
@@ -146,8 +150,8 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
-                checked = viewModel.rememberMe,
-                onCheckedChange = { viewModel.updateRememberMe(it) },
+                checked = localRememberMe,
+                onCheckedChange = { localRememberMe = it },
                 enabled = !viewModel.isLoading
             )
             Text("Keep me signed in")
@@ -168,7 +172,7 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
 
         Button(
             onClick = {
-                viewModel.signUp {
+                viewModel.signUp(localRememberMe) {
                     navController.navigate("feed") {
                         popUpTo("login") { inclusive = true }
                     }
