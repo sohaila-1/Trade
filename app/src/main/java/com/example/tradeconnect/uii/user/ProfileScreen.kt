@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
@@ -28,6 +29,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -440,8 +442,9 @@ fun UserProfileScreen(
                 ProfileTextField(
                     label = "Mobile",
                     value = viewModel.mobile,
-                    onValueChange = { viewModel.mobile = it },
-                    enabled = !viewModel.isLoading
+                    onValueChange = { viewModel.mobile = it.filter { it.isDigit() } },
+                    enabled = !viewModel.isLoading,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -525,7 +528,8 @@ private fun ProfileTextField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -539,7 +543,8 @@ private fun ProfileTextField(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(50.dp),
             enabled = enabled,
-            singleLine = true
+            singleLine = true,
+            keyboardOptions = keyboardOptions
         )
     }
 }
