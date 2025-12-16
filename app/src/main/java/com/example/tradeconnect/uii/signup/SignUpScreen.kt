@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -110,7 +112,7 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
         OutlinedTextField(
             value = viewModel.phone,
             onValueChange = {
-                viewModel.phone = it
+                viewModel.phone = it.filter { it.isDigit() }
                 viewModel.clearError()
             },
             label = { Text("Phone (optional)") },
@@ -118,7 +120,8 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel) {
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(50.dp),
             enabled = !viewModel.isLoading,
-            singleLine = true
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
 
         Spacer(modifier = Modifier.height(12.dp))
