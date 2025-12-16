@@ -14,15 +14,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.tradeconnect.model.Tweet
 import com.example.tradeconnect.ui.components.rememberFormattedTime
 import com.example.tradeconnect.ui.theme.*
+import com.example.tradeconnect.util.Base64ProfileImage
 
 @Composable
 fun TweetItem(
@@ -32,7 +36,7 @@ fun TweetItem(
     onMoreClick: () -> Unit,
     onLike: (String) -> Unit,
     onSave: (String) -> Unit,
-    onRetweet: (String) -> Unit = {},  // 🆕 Callback retweet
+    onRetweet: (String) -> Unit = {},
     onUserClick: ((String) -> Unit)? = null,
     onCommentClick: ((String) -> Unit)? = null
 ) {
@@ -59,23 +63,65 @@ fun TweetItem(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            // Avatar
+            // 🆕 Avatar avec photo de profil
             Box(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(TwitterBlue)
                     .clickable(enabled = onUserClick != null) {
                         onUserClick?.invoke(tweet.userId)
                     },
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = tweet.username.firstOrNull()?.uppercase() ?: "?",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
+                when {
+                    // Si c'est une image base64
+                    tweet.userProfileImageUrl.startsWith("data:image") ||
+                            tweet.userProfileImageUrl.length > 200 -> {
+                        Base64ProfileImage(
+                            base64String = tweet.userProfileImageUrl,
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                        )
+                    }
+                    // Si c'est une URL normale
+                    tweet.userProfileImageUrl.isNotEmpty() &&
+                            (tweet.userProfileImageUrl.startsWith("http") ||
+                                    tweet.userProfileImageUrl.startsWith("https")) -> {
+                        AsyncImage(
+                            model = tweet.userProfileImageUrl,
+                            contentDescription = "Photo de profil",
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    // Sinon afficher l'initiale avec dégradé
+                    else -> {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(
+                                            TwitterBlue,
+                                            TwitterBlue.copy(alpha = 0.7f)
+                                        )
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = tweet.username.firstOrNull()?.uppercase() ?: "?",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -159,7 +205,7 @@ fun TweetItem(
                         onClick = { onCommentClick?.invoke(tweet.id) }
                     )
 
-                    // 🆕 Retweet
+                    // Retweet
                     ActionButton(
                         icon = if (isRetweeted) Icons.Filled.Repeat else Icons.Outlined.Repeat,
                         count = tweet.retweets.size,
@@ -189,7 +235,7 @@ fun TweetItem(
                         onClick = { onSave(tweet.id) }
                     )
 
-                    // 🆕 Share
+                    // Share
                     ActionButton(
                         icon = Icons.Outlined.Share,
                         count = null,

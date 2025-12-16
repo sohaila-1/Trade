@@ -33,7 +33,6 @@ class TweetViewModel(
 
     // ==================== PROFIL UTILISATEUR ====================
 
-    // 🆕 Profil complet de l'utilisateur connecté (avec followers/following)
     private val _currentUserProfile = MutableStateFlow<User?>(null)
     val currentUserProfile: StateFlow<User?> = _currentUserProfile.asStateFlow()
 
@@ -58,7 +57,7 @@ class TweetViewModel(
     private var userProfileJob: Job? = null
 
     // -----------------------------------------------------
-    // 🆕 CHARGER LE PROFIL COMPLET DE L'UTILISATEUR CONNECTÉ
+    // CHARGER LE PROFIL COMPLET DE L'UTILISATEUR CONNECTÉ
     // -----------------------------------------------------
     fun loadCurrentUserProfile() {
         val userId = authVM.getCurrentUserId() ?: return
@@ -72,7 +71,7 @@ class TweetViewModel(
     }
 
     // -----------------------------------------------------
-    // 🔥 CHARGER MES TWEETS
+    // CHARGER MES TWEETS
     // -----------------------------------------------------
     fun loadMyTweets() {
         val user = authVM.currentUser.value ?: return
@@ -82,7 +81,7 @@ class TweetViewModel(
     }
 
     // -----------------------------------------------------
-    // 🔥 CHARGER TOUS LES TWEETS (temps réel)
+    // CHARGER TOUS LES TWEETS (temps réel)
     // -----------------------------------------------------
     fun loadAllTweets() {
         tweetRepo.getAllTweets { list ->
@@ -91,7 +90,7 @@ class TweetViewModel(
     }
 
     // -----------------------------------------------------
-    // 🔥 CHARGER LES PERSONNES QUE JE SUIS
+    // CHARGER LES PERSONNES QUE JE SUIS
     // -----------------------------------------------------
     fun loadFollowingUsers() {
         val user = authVM.currentUser.value ?: return
@@ -104,7 +103,7 @@ class TweetViewModel(
     }
 
     // -----------------------------------------------------
-    // 🔥 CHARGER LES TWEETS DES ABONNEMENTS
+    // CHARGER LES TWEETS DES ABONNEMENTS
     // -----------------------------------------------------
     private fun loadFollowingTweets(ids: List<String>) {
         if (ids.isEmpty()) {
@@ -125,15 +124,21 @@ class TweetViewModel(
     }
 
     // -----------------------------------------------------
-    // 🔥 CRÉER UN TWEET
+    // 🆕 CRÉER UN TWEET (avec photo de profil)
     // -----------------------------------------------------
     fun createTweet(content: String) {
         val user = authVM.currentUser.value ?: return
+
+        // 🆕 Récupérer la photo de profil depuis le profil complet
+        val profileImageUrl = _currentUserProfile.value?.profileImageUrl
+            ?: user.profileImageUrl
+            ?: ""
 
         val tweet = Tweet(
             id = UUID.randomUUID().toString(),
             userId = user.uid,
             username = user.username,
+            userProfileImageUrl = profileImageUrl,  // 🆕 Ajouter la photo
             content = content,
             timestamp = System.currentTimeMillis(),
             commentsCount = 0
@@ -145,7 +150,7 @@ class TweetViewModel(
     }
 
     // -----------------------------------------------------
-    // 🔥 ÉDITER / SUPPRIMER
+    // ÉDITER / SUPPRIMER
     // -----------------------------------------------------
     fun editTweet(id: String, newContent: String) {
         tweetRepo.updateTweet(id, newContent) {
@@ -164,7 +169,7 @@ class TweetViewModel(
             ?: allTweets.value.firstOrNull { it.id == id }
 
     // -----------------------------------------------------
-    // 🔥 CHARGER TOUS LES USERS
+    // CHARGER TOUS LES USERS
     // -----------------------------------------------------
     fun loadAllUsers() {
         val currentUid = authVM.getCurrentUserId() ?: return
@@ -175,14 +180,14 @@ class TweetViewModel(
     }
 
     // -----------------------------------------------------
-    // 🔥 FOLLOW / UNFOLLOW
+    // FOLLOW / UNFOLLOW
     // -----------------------------------------------------
     fun followUser(targetUid: String) {
         viewModelScope.launch {
             followRepo.followUser(targetUid)
             loadFollowingUsers()
             loadAllUsers()
-            loadCurrentUserProfile()  // 🆕 Recharger le profil pour mettre à jour les compteurs
+            loadCurrentUserProfile()
         }
     }
 
@@ -191,7 +196,7 @@ class TweetViewModel(
             followRepo.unfollowUser(targetUid)
             loadFollowingUsers()
             loadAllUsers()
-            loadCurrentUserProfile()  // 🆕 Recharger le profil pour mettre à jour les compteurs
+            loadCurrentUserProfile()
         }
     }
 
@@ -202,12 +207,11 @@ class TweetViewModel(
             ?.content ?: ""
 
     // -----------------------------------------------------
-    // 🔥 LIKE (avec mise à jour optimiste)
+    // LIKE (avec mise à jour optimiste)
     // -----------------------------------------------------
     fun toggleLike(tweetId: String) {
         val uid = authVM.getCurrentUserId() ?: return
 
-        // 🚀 Mise à jour optimiste IMMÉDIATE
         allTweets.value = allTweets.value.map { tweet ->
             if (tweet.id == tweetId) {
                 val newLikes = if (tweet.likes.contains(uid)) {
@@ -234,17 +238,15 @@ class TweetViewModel(
             }
         }
 
-        // Mettre à jour Firebase en arrière-plan
         tweetRepo.toggleLike(tweetId, uid)
     }
 
     // -----------------------------------------------------
-    // 🔥 SAVE (avec mise à jour optimiste)
+    // SAVE (avec mise à jour optimiste)
     // -----------------------------------------------------
     fun toggleSave(tweetId: String) {
         val userId = authVM.getCurrentUserId() ?: return
 
-        // 🚀 Mise à jour optimiste IMMÉDIATE
         allTweets.value = allTweets.value.map { tweet ->
             if (tweet.id == tweetId) {
                 val newSaves = if (tweet.saves.contains(userId)) {
@@ -271,17 +273,15 @@ class TweetViewModel(
             }
         }
 
-        // Mettre à jour Firebase en arrière-plan
         tweetRepo.toggleSave(tweetId, userId)
     }
 
     // -----------------------------------------------------
-    // 🔥 RETWEET (avec mise à jour optimiste)
+    // RETWEET (avec mise à jour optimiste)
     // -----------------------------------------------------
     fun toggleRetweet(tweetId: String) {
         val userId = authVM.getCurrentUserId() ?: return
 
-        // 🚀 Mise à jour optimiste IMMÉDIATE
         allTweets.value = allTweets.value.map { tweet ->
             if (tweet.id == tweetId) {
                 val newRetweets = if (tweet.retweets.contains(userId)) {
@@ -308,7 +308,6 @@ class TweetViewModel(
             }
         }
 
-        // Mettre à jour Firebase en arrière-plan
         tweetRepo.toggleRetweet(tweetId, userId)
     }
 
@@ -391,7 +390,6 @@ class TweetViewModel(
     fun toggleCommentLike(tweetId: String, commentId: String) {
         val userId = authVM.getCurrentUserId() ?: return
 
-        // 🚀 Mise à jour optimiste pour les commentaires
         _comments.value = _comments.value.map { comment ->
             if (comment.id == commentId) {
                 val newLikes = if (comment.likes.contains(userId)) {
