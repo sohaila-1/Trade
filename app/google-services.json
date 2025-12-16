@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "347934693953",
+    "project_id": "trade-ba41c",
+    "storage_bucket": "trade-ba41c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:347934693953:android:9b0f72900b57b4dec484c0",
+        "android_client_info": {
+          "package_name": "com.example.tradeconnect"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "347934693953-jcducn20cne5gtopnqct8l6vjv9d8nne.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.tradeconnect",
+            "certificate_hash": "e9667f8fade80b2ca5704aaebc73aa13bde8d044"
+          }
+        },
+        {
+          "client_id": "347934693953-6247dgi06a67cq27qk2t85m1tn4mfrq2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyU0J15bKeqYZBR9f5Ba90-HnoXXiNfNg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "347934693953-6247dgi06a67cq27qk2t85m1tn4mfrq2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
