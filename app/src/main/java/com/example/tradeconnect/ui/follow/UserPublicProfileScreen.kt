@@ -46,39 +46,45 @@ fun UserPublicProfileScreen(
     val selectedUser by followViewModel.selectedUser.collectAsState()
     val currentUser by followViewModel.currentUser.collectAsState()
     val followingStatus by followViewModel.followingStatus.collectAsState()
+    val blockedStatus by followViewModel.blockedStatus.collectAsState()
 
     val isFollowing = followingStatus[userId] ?: false
+    val isBlocked = blockedStatus[userId] ?: false
     val isOwnProfile = followViewModel.isCurrentUser(userId)
     val isLoading = followViewModel.isLoading
     val isFollowLoading = followViewModel.isFollowLoading == userId
 
-    // 🆕 Tweets
+    // Tweets
     var userTweets by remember { mutableStateOf<List<Tweet>>(emptyList()) }
     var likedTweets by remember { mutableStateOf<List<Tweet>>(emptyList()) }
     var selectedTab by remember { mutableIntStateOf(0) }
+
+    // Dialogs
+    var showMenu by remember { mutableStateOf(false) }
+    var showBlockDialog by remember { mutableStateOf(false) }
+    var showUnblockDialog by remember { mutableStateOf(false) }
 
     // Couleurs
     val bgColor = if (isDarkMode) DarkBackground else LightBackground
     val textColor = if (isDarkMode) DarkText else LightText
     val secondaryColor = if (isDarkMode) DarkGrayText else LightGrayText
     val dividerColor = if (isDarkMode) DarkDivider else LightDivider
+    val cardColor = if (isDarkMode) DarkSurface else LightSurface
 
     // Charger le profil
     LaunchedEffect(userId) {
         followViewModel.loadUserProfile(userId)
     }
 
-    // 🆕 Charger les tweets et likes
+    // Charger les tweets et likes
     LaunchedEffect(userId, tweetViewModel?.allTweets?.value) {
         if (tweetViewModel != null) {
             val allTweets = tweetViewModel.allTweets.value
 
-            // Tweets de l'utilisateur
             userTweets = allTweets
                 .filter { it.userId == userId }
                 .sortedByDescending { it.timestamp }
 
-            // Tweets aimés par l'utilisateur
             likedTweets = allTweets
                 .filter { it.likes.contains(userId) }
                 .sortedByDescending { it.timestamp }
@@ -90,6 +96,81 @@ fun UserPublicProfileScreen(
         onDispose {
             followViewModel.clearSelectedUser()
         }
+    }
+
+    // Dialog de blocage
+    if (showBlockDialog && selectedUser != null) {
+        AlertDialog(
+            onDismissRequest = { showBlockDialog = false },
+            containerColor = cardColor,
+            title = {
+                Text(
+                    "Bloquer @${selectedUser!!.email.substringBefore("@")} ?",
+                    fontWeight = FontWeight.Bold,
+                    color = textColor
+                )
+            },
+            text = {
+                Text(
+                    "Cette personne ne pourra plus voir votre profil, vos tweets ni vous envoyer de messages. Vous ne verrez plus ses tweets dans votre fil.",
+                    color = secondaryColor
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        followViewModel.blockUser(userId)
+                        showBlockDialog = false
+                        navController.popBackStack()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE0245E))
+                ) {
+                    Text("Bloquer", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBlockDialog = false }) {
+                    Text("Annuler", color = TwitterBlue)
+                }
+            }
+        )
+    }
+
+    // Dialog de déblocage
+    if (showUnblockDialog && selectedUser != null) {
+        AlertDialog(
+            onDismissRequest = { showUnblockDialog = false },
+            containerColor = cardColor,
+            title = {
+                Text(
+                    "Débloquer @${selectedUser!!.email.substringBefore("@")} ?",
+                    fontWeight = FontWeight.Bold,
+                    color = textColor
+                )
+            },
+            text = {
+                Text(
+                    "Cette personne pourra à nouveau voir votre profil, vos tweets et vous envoyer des messages.",
+                    color = secondaryColor
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        followViewModel.unblockUser(userId)
+                        showUnblockDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = TwitterBlue)
+                ) {
+                    Text("Débloquer", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUnblockDialog = false }) {
+                    Text("Annuler", color = TwitterBlue)
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -128,18 +209,89 @@ fun UserPublicProfileScreen(
                             )
                         }
                     } else {
-                        IconButton(
-                            onClick = { /* TODO */ },
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .clip(CircleShape)
-                                .background(Color.Black.copy(alpha = 0.4f))
-                        ) {
-                            Icon(
-                                Icons.Outlined.MoreVert,
-                                contentDescription = "Plus",
-                                tint = Color.White
-                            )
+                        // Menu options
+                        Box {
+                            IconButton(
+                                onClick = { showMenu = true },
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Black.copy(alpha = 0.4f))
+                            ) {
+                                Icon(
+                                    Icons.Outlined.MoreVert,
+                                    contentDescription = "Plus",
+                                    tint = Color.White
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false },
+                                containerColor = cardColor
+                            ) {
+                                if (isBlocked) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                "Débloquer",
+                                                color = TwitterBlue
+                                            )
+                                        },
+                                        onClick = {
+                                            showMenu = false
+                                            showUnblockDialog = true
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Outlined.RemoveCircleOutline,
+                                                contentDescription = null,
+                                                tint = TwitterBlue
+                                            )
+                                        }
+                                    )
+                                } else {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                "Bloquer @${selectedUser?.email?.substringBefore("@") ?: ""}",
+                                                color = Color(0xFFE0245E)
+                                            )
+                                        },
+                                        onClick = {
+                                            showMenu = false
+                                            showBlockDialog = true
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Outlined.Block,
+                                                contentDescription = null,
+                                                tint = Color(0xFFE0245E)
+                                            )
+                                        }
+                                    )
+                                }
+
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "Signaler",
+                                            color = textColor
+                                        )
+                                    },
+                                    onClick = {
+                                        showMenu = false
+                                        // TODO: Signalement
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Outlined.Flag,
+                                            contentDescription = null,
+                                            tint = secondaryColor
+                                        )
+                                    }
+                                )
+                            }
                         }
                     }
                 },
@@ -159,6 +311,148 @@ fun UserPublicProfileScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(color = TwitterBlue)
+                }
+            }
+
+            // Utilisateur bloqué - Afficher un message
+            isBlocked && selectedUser != null -> {
+                val user = selectedUser!!
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(bgColor)
+                ) {
+                    // Bannière
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(150.dp)
+                                .background(
+                                    brush = Brush.horizontalGradient(
+                                        colors = listOf(
+                                            secondaryColor.copy(alpha = 0.5f),
+                                            secondaryColor.copy(alpha = 0.3f)
+                                        )
+                                    )
+                                )
+                        )
+                    }
+
+                    // Section profil bloqué
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .offset(y = (-40).dp)
+                                .padding(horizontal = 16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Bottom
+                            ) {
+                                // Avatar grisé
+                                Box(
+                                    modifier = Modifier
+                                        .size(90.dp)
+                                        .clip(CircleShape)
+                                        .background(bgColor)
+                                        .padding(4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(82.dp)
+                                            .clip(CircleShape)
+                                            .background(secondaryColor.copy(alpha = 0.3f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Outlined.Block,
+                                            contentDescription = null,
+                                            tint = secondaryColor,
+                                            modifier = Modifier.size(40.dp)
+                                        )
+                                    }
+                                }
+
+                                // Bouton débloquer
+                                Button(
+                                    onClick = { showUnblockDialog = true },
+                                    shape = RoundedCornerShape(20.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = TwitterBlue
+                                    ),
+                                    modifier = Modifier
+                                        .padding(top = 48.dp)
+                                        .height(36.dp)
+                                ) {
+                                    Text(
+                                        "Débloquer",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = user.username,
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textColor
+                            )
+
+                            Text(
+                                text = "@${user.email.substringBefore("@")}",
+                                fontSize = 15.sp,
+                                color = secondaryColor
+                            )
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // Message bloqué
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = cardColor,
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(20.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Block,
+                                        contentDescription = null,
+                                        tint = Color(0xFFE0245E),
+                                        modifier = Modifier.size(48.dp)
+                                    )
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Text(
+                                        "Vous avez bloqué @${user.email.substringBefore("@")}",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = textColor,
+                                        textAlign = TextAlign.Center
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Text(
+                                        "Vous ne pouvez pas voir les tweets de cette personne et elle ne peut pas voir les vôtres.",
+                                        fontSize = 14.sp,
+                                        color = secondaryColor,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -187,12 +481,21 @@ fun UserPublicProfileScreen(
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Medium
                         )
+
+                        followViewModel.errorMessage?.let { error ->
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                error,
+                                color = Color(0xFFE0245E),
+                                fontSize = 14.sp
+                            )
+                        }
                     }
                 }
             }
 
-            // Profil trouvé
-            selectedUser != null -> {
+            // Profil trouvé (non bloqué)
+            selectedUser != null && !isBlocked -> {
                 val user = selectedUser!!
                 val currentUserId = currentUser?.uid ?: ""
 
@@ -201,7 +504,7 @@ fun UserPublicProfileScreen(
                         .fillMaxSize()
                         .background(bgColor)
                 ) {
-                    // ==================== BANNIÈRE ====================
+                    // Bannière
                     item {
                         Box(
                             modifier = Modifier
@@ -219,7 +522,7 @@ fun UserPublicProfileScreen(
                         )
                     }
 
-                    // ==================== SECTION PROFIL ====================
+                    // Section profil
                     item {
                         Column(
                             modifier = Modifier
@@ -227,7 +530,6 @@ fun UserPublicProfileScreen(
                                 .offset(y = (-40).dp)
                                 .padding(horizontal = 16.dp)
                         ) {
-                            // Row avec Avatar et Boutons
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -272,7 +574,6 @@ fun UserPublicProfileScreen(
                                         }
                                     }
 
-                                    // Indicateur en ligne
                                     if (user.isOnline) {
                                         Box(
                                             modifier = Modifier
@@ -293,7 +594,6 @@ fun UserPublicProfileScreen(
                                     modifier = Modifier.padding(top = 48.dp)
                                 ) {
                                     if (!isOwnProfile) {
-                                        // Bouton Message
                                         OutlinedIconButton(
                                             onClick = {
                                                 navController.navigate("chat/${user.uid}/${user.username}")
@@ -313,7 +613,6 @@ fun UserPublicProfileScreen(
                                             )
                                         }
 
-                                        // Bouton Follow/Unfollow
                                         Button(
                                             onClick = { followViewModel.toggleFollow(userId) },
                                             enabled = !isFollowLoading,
@@ -345,7 +644,6 @@ fun UserPublicProfileScreen(
                                             }
                                         }
                                     } else {
-                                        // Bouton Modifier le profil
                                         OutlinedButton(
                                             onClick = { navController.navigate("edit_profile") },
                                             shape = RoundedCornerShape(20.dp),
@@ -370,7 +668,6 @@ fun UserPublicProfileScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // Nom d'utilisateur
                             Text(
                                 text = user.username,
                                 fontSize = 22.sp,
@@ -378,14 +675,12 @@ fun UserPublicProfileScreen(
                                 color = textColor
                             )
 
-                            // Email / Handle
                             Text(
                                 text = "@${user.email.substringBefore("@")}",
                                 fontSize = 15.sp,
                                 color = secondaryColor
                             )
 
-                            // Badge "Vous suit"
                             if (!isOwnProfile && currentUser?.followers?.contains(userId) == true) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Surface(
@@ -401,7 +696,6 @@ fun UserPublicProfileScreen(
                                 }
                             }
 
-                            // Bio
                             if (user.bio.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text(
@@ -414,13 +708,11 @@ fun UserPublicProfileScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // Infos supplémentaires
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Statut en ligne
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -440,7 +732,6 @@ fun UserPublicProfileScreen(
                                     )
                                 }
 
-                                // Date d'inscription
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -461,11 +752,9 @@ fun UserPublicProfileScreen(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Stats Followers / Following
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(20.dp)
                             ) {
-                                // Following
                                 Row(
                                     modifier = Modifier.clickable {
                                         navController.navigate("following/$userId")
@@ -486,7 +775,6 @@ fun UserPublicProfileScreen(
                                     )
                                 }
 
-                                // Followers
                                 Row(
                                     modifier = Modifier.clickable {
                                         navController.navigate("followers/$userId")
@@ -510,7 +798,7 @@ fun UserPublicProfileScreen(
                         }
                     }
 
-                    // ==================== TABS ====================
+                    // Tabs
                     item {
                         ProfileTabs(
                             selectedTab = selectedTab,
@@ -523,9 +811,8 @@ fun UserPublicProfileScreen(
                         )
                     }
 
-                    // ==================== CONTENU DES TABS ====================
+                    // Contenu des tabs
                     when (selectedTab) {
-                        // Tab "Posts"
                         0 -> {
                             if (userTweets.isEmpty()) {
                                 item {
@@ -546,7 +833,7 @@ fun UserPublicProfileScreen(
                                         tweet = tweet,
                                         isDarkMode = isDarkMode,
                                         currentUserId = currentUserId,
-                                        onMoreClick = { /* TODO */ },
+                                        onMoreClick = { },
                                         onLike = { tweetViewModel?.toggleLike(it) },
                                         onSave = { tweetViewModel?.toggleSave(it) },
                                         onRetweet = { tweetViewModel?.toggleRetweet(it) },
@@ -558,21 +845,17 @@ fun UserPublicProfileScreen(
                                 }
                             }
                         }
-
-                        // Tab "Réponses"
                         1 -> {
                             item {
                                 EmptyTabContent(
                                     emoji = "💬",
                                     title = "Aucune réponse",
-                                    subtitle = "Les réponses aux tweets apparaîtront ici",
+                                    subtitle = "Les réponses apparaîtront ici",
                                     textColor = textColor,
                                     secondaryColor = secondaryColor
                                 )
                             }
                         }
-
-                        // Tab "Médias"
                         2 -> {
                             item {
                                 EmptyTabContent(
@@ -584,8 +867,6 @@ fun UserPublicProfileScreen(
                                 )
                             }
                         }
-
-                        // Tab "J'aime" - 🆕 FONCTIONNEL
                         3 -> {
                             if (likedTweets.isEmpty()) {
                                 item {
@@ -606,7 +887,7 @@ fun UserPublicProfileScreen(
                                         tweet = tweet,
                                         isDarkMode = isDarkMode,
                                         currentUserId = currentUserId,
-                                        onMoreClick = { /* TODO */ },
+                                        onMoreClick = { },
                                         onLike = { tweetViewModel?.toggleLike(it) },
                                         onSave = { tweetViewModel?.toggleSave(it) },
                                         onRetweet = { tweetViewModel?.toggleRetweet(it) },
@@ -624,7 +905,6 @@ fun UserPublicProfileScreen(
                         }
                     }
 
-                    // Espace en bas
                     item {
                         Spacer(modifier = Modifier.height(100.dp))
                     }
@@ -654,9 +934,7 @@ private fun ProfileTabs(
     Column {
         HorizontalDivider(thickness = 0.5.dp, color = dividerColor)
 
-        Row(
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
             tabs.forEachIndexed { index, tab ->
                 Column(
                     modifier = Modifier
@@ -676,7 +954,6 @@ private fun ProfileTabs(
                             color = if (selectedTab == index) textColor else secondaryColor
                         )
 
-                        // Badge avec le nombre
                         if (tab.count != null) {
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
@@ -689,7 +966,6 @@ private fun ProfileTabs(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Indicateur
                     Box(
                         modifier = Modifier
                             .width(if (selectedTab == index) 50.dp else 0.dp)
@@ -726,13 +1002,8 @@ private fun EmptyTabContent(
             .padding(48.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = emoji,
-            fontSize = 48.sp
-        )
-
+        Text(text = emoji, fontSize = 48.sp)
         Spacer(modifier = Modifier.height(16.dp))
-
         Text(
             text = title,
             fontSize = 18.sp,
@@ -740,9 +1011,7 @@ private fun EmptyTabContent(
             color = textColor,
             textAlign = TextAlign.Center
         )
-
         Spacer(modifier = Modifier.height(8.dp))
-
         Text(
             text = subtitle,
             fontSize = 14.sp,

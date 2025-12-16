@@ -41,7 +41,20 @@ class FollowViewModel(
     private val _followingStatus = MutableStateFlow<Map<String, Boolean>>(emptyMap())
     val followingStatus: StateFlow<Map<String, Boolean>> = _followingStatus.asStateFlow()
 
-    // UI states
+    // ==================== BLOCKED USERS ====================
+
+    private val _blockedUsers = MutableStateFlow<List<User>>(emptyList())
+    val blockedUsers: StateFlow<List<User>> = _blockedUsers.asStateFlow()
+
+    private val _isBlockedLoading = MutableStateFlow(false)
+    val isBlockedLoading: StateFlow<Boolean> = _isBlockedLoading.asStateFlow()
+
+    // Map du statut de blocage (uid -> isBlocked)
+    private val _blockedStatus = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    val blockedStatus: StateFlow<Map<String, Boolean>> = _blockedStatus.asStateFlow()
+
+    // ==================== UI STATES ====================
+
     var isLoading by mutableStateOf(false)
         private set
 
@@ -56,6 +69,7 @@ class FollowViewModel(
     init {
         observeCurrentUser()
         observeAllUsers()
+        loadBlockedUsers()
     }
 
     private fun observeCurrentUser() {
@@ -82,6 +96,21 @@ class FollowViewModel(
     fun loadUserProfile(userId: String) {
         viewModelScope.launch {
             isLoading = true
+            errorMessage = null
+
+            // Vérifier si l'utilisateur est bloqué
+            val isBlocked = followRepository.isBlocked(userId)
+            val isBlockedBy = followRepository.isBlockedBy(userId)
+
+            _blockedStatus.value = _blockedStatus.value + (userId to isBlocked)
+
+            if (isBlockedBy) {
+                errorMessage = "Cet utilisateur vous a bloqué"
+                _selectedUser.value = null
+                isLoading = false
+                return@launch
+            }
+
             val user = followRepository.getUserById(userId)
             _selectedUser.value = user
             isLoading = false
@@ -167,6 +196,78 @@ class FollowViewModel(
     fun clearFollowLists() {
         _followers.value = emptyList()
         _following.value = emptyList()
+    }
+
+    // ==================== BLOCKED USERS ====================
+
+    fun loadBlockedUsers() {
+        viewModelScope.launch {
+            _isBlockedLoading.value = true
+            try {
+                val users = followRepository.getBlockedUsers()
+                _blockedUsers.value = users
+
+                // Mettre à jour le statut de blocage
+                val blockedMap = users.associate { it.uid to true }
+                _blockedStatus.value = blockedMap
+            } catch (e: Exception) {
+                errorMessage = e.message
+            } finally {
+                _isBlockedLoading.value = false
+            }
+        }
+    }
+
+    fun blockUser(userId: String) {
+        viewModelScope.launch {
+            isFollowLoading = userId
+            errorMessage = null
+
+            val result = followRepository.blockUser(userId)
+            result.onSuccess {
+                // Mettre à jour le statut local
+                _blockedStatus.value = _blockedStatus.value + (userId to true)
+                _followingStatus.value = _followingStatus.value + (userId to false)
+
+                // Ajouter à la liste locale
+                val user = followRepository.getUserById(userId)
+                user?.let {
+                    _blockedUsers.value = _blockedUsers.value + it
+                }
+            }.onFailure { e ->
+                errorMessage = e.message
+            }
+
+            isFollowLoading = null
+        }
+    }
+
+    fun unblockUser(userId: String) {
+        viewModelScope.launch {
+            isFollowLoading = userId
+            errorMessage = null
+
+            val result = followRepository.unblockUser(userId)
+            result.onSuccess {
+                // Mettre à jour le statut local
+                _blockedStatus.value = _blockedStatus.value + (userId to false)
+
+                // Retirer de la liste locale
+                _blockedUsers.value = _blockedUsers.value.filter { it.uid != userId }
+            }.onFailure { e ->
+                errorMessage = e.message
+            }
+
+            isFollowLoading = null
+        }
+    }
+
+    fun isUserBlocked(userId: String): Boolean {
+        return _blockedStatus.value[userId] ?: false
+    }
+
+    suspend fun checkIfBlocked(userId: String): Boolean {
+        return followRepository.isBlocked(userId)
     }
 
     // ==================== UTILS ====================

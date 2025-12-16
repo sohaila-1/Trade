@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.tradeconnect.ui.notifications.NotificationsScreen
+import com.example.tradeconnect.ui.settings.BlockedUsersScreen
 
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -194,6 +195,13 @@ fun AppNavHost(
                 viewModel = tweetVM,
                 isDarkMode = isDarkMode,
                 onToggleTheme = { isDarkMode = !isDarkMode }
+            )
+        }
+        composable("blocked_users") {
+            BlockedUsersScreen(
+                navController = navController,
+                followViewModel = followVM,
+                isDarkMode = isDarkMode
             )
         }
 
