@@ -22,6 +22,8 @@ import com.example.tradeconnect.viewmodel.AuthViewModel
 @Composable
 fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
+    var localRememberMe by remember {mutableStateOf(false)}
+
     LaunchedEffect(Unit) {
         viewModel.clearError()
     }
@@ -93,8 +95,8 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
-                    checked = viewModel.rememberMe,
-                    onCheckedChange = { checked -> viewModel.updateRememberMe(checked) },
+                    checked = localRememberMe,
+                    onCheckedChange = { localRememberMe = it },
                     enabled = !viewModel.isLoading
                 )
                 Text("Remember me")
@@ -123,7 +125,7 @@ fun LoginScreen(navController: NavController, viewModel: AuthViewModel) {
 
         Button(
             onClick = {
-                viewModel.login {
+                viewModel.login(localRememberMe) {
                     navController.navigate("feed") {
                         popUpTo("login") { inclusive = true }
                     }

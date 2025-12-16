@@ -157,7 +157,7 @@ class AuthViewModel(
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 
-    fun login(onSuccess: () -> Unit) {
+    fun login(shouldRememberMe : Boolean, onSuccess: () -> Unit) {
         // Validate before attempting login
         if (!validateLoginFields()) {
             return
@@ -173,7 +173,7 @@ class AuthViewModel(
                 currentUser.value = user
                 viewModelScope.launch {
                     // persist remember me if checked
-                    prefs.setRememberMe(rememberMe)
+                    prefs.setRememberMe(shouldRememberMe)
 
                     // if we kept user logged in, mark loggedIn true
                     _isLoggedIn.value = true
@@ -185,7 +185,7 @@ class AuthViewModel(
         }
     }
 
-    fun signUp(onSuccess: () -> Unit) {
+    fun signUp(shouldRememberMe : Boolean, onSuccess: () -> Unit) {
         // Validate before attempting signup
         if (!validateSignUpFields()) {
             return
@@ -206,12 +206,9 @@ class AuthViewModel(
                 val user = repo.getCurrentUserModel()
                 currentUser.value = user
                 viewModelScope.launch {
-                    if (!rememberMe) {
-                        rememberMe = true
-                        prefs.setRememberMe(true)
-                    } else {
-                        prefs.setRememberMe(rememberMe)
-                    }
+
+                    prefs.setRememberMe(shouldRememberMe)
+
                     _isLoggedIn.value = true
                     onSuccess()
                 }
@@ -254,12 +251,15 @@ class AuthViewModel(
 
     fun logout(onComplete: (() -> Unit)? = null) {
         currentUser.value = null
+
+        // Sign out from Firebase
+        repo.logout()
+
         viewModelScope.launch {
             // Clear all local cached data
             messageRepository?.clearAllData()
 
-            // Sign out from Firebase
-            repo.logout()
+            prefs.setRememberMe(false)
 
             // Clear form fields for security
             email = ""
