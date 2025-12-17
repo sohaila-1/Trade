@@ -536,7 +536,7 @@ fun SettingsScreen(
 
             // Footer
             Text(
-                text = "TradeConnect © 2024",
+                text = "TradeConnect © 2025",
                 fontSize = 12.sp,
                 color = secondaryColor,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -1346,7 +1346,7 @@ private fun AboutDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    "© 2024 TradeConnect",
+                    "© 2025 TradeConnect",
                     fontSize = 12.sp,
                     color = secondaryColor.copy(alpha = 0.7f)
                 )
